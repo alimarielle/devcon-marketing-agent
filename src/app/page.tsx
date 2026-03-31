@@ -75,8 +75,12 @@ export default function DevconMarketingAgent() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [remaining, setRemaining] = useState<number | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const MAX_WORDS = 200;
+  const wordCount = input.trim().split(/\s+/).filter(Boolean).length;
 
   useEffect(() => {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
@@ -120,19 +124,29 @@ export default function DevconMarketingAgent() {
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
           system: SYSTEM_PROMPT,
           messages: newHistory,
         }),
       });
       const data = await res.json();
+
+      if (!res.ok) {
+        const errMsg = data.error?.message || data.error || "Something went wrong.";
+        setMessages(prev => [...prev, { role: "assistant", text: `⚠️ ${errMsg}` }]);
+        setLoading(false);
+        abortRef.current = null;
+        return;
+      }
+
       const reply = data.content?.find((b: { type: string; text?: string }) => b.type === "text")?.text || "No response.";
+      const rem = res.headers.get("X-Prompts-Remaining");
+      if (rem !== null) setRemaining(Number(rem));
       setHistory([...newHistory, { role: "assistant", content: reply }]);
       setMessages(prev => [...prev, { role: "assistant", text: reply }]);
     } catch (e: unknown) {
       if (e instanceof Error && e.name !== "AbortError") {
-        setMessages(prev => [...prev, { role: "assistant", text: "⚠️ Error connecting to agent. Please try again." }]);
+        const msg = (e as { message?: string }).message || "Error connecting to agent.";
+        setMessages(prev => [...prev, { role: "assistant", text: `⚠️ ${msg}` }]);
       }
     }
 
@@ -160,8 +174,8 @@ export default function DevconMarketingAgent() {
       </div>
 
       <div style={{ display: "flex", flex: 1, overflow: "hidden", height: "calc(100vh - 70px)" }}>
-        {/* Sidebar */}
-        <div style={{ width: 230, background: "#0d0d1a", borderRight: "1px solid #1e1e3a", overflowY: "auto", padding: "14px 10px", flexShrink: 0 }}>
+        {/* Sidebar — fixed, never scrolls */}
+        <div style={{ width: 230, background: "#0d0d1a", borderRight: "1px solid #1e1e3a", overflowY: "auto", overflowX: "hidden", padding: "14px 10px", flexShrink: 0, position: "sticky", top: 0, height: "100%", display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 10, color: "#666", fontWeight: 700, letterSpacing: 1, marginBottom: 8, paddingLeft: 4 }}>WORKFLOW MODE</div>
           {WORKFLOW_MODES.map(m => (
             <button key={m.id} onClick={() => setMode(mode === m.id ? null : m.id)}
@@ -186,7 +200,7 @@ export default function DevconMarketingAgent() {
             {BRAND.chapters.map(ch => <option key={ch} value={ch}>{ch}</option>)}
           </select>
 
-          <div style={{ marginTop: 16, padding: "10px", background: "#0f1a0f", borderRadius: 8, border: "1px solid #1a3a1a" }}>
+          <div style={{ marginTop: 16, padding: "10px", background: "#0f1a0f", borderRadius: 8, border: "1px solid #1a3a1a"}}>
             <div style={{ fontSize: 10, color: "#5a8a5a", fontWeight: 700, marginBottom: 6 }}>ACTIVE CONFIG</div>
             {mode && <div style={{ fontSize: 11, color: "#7aff7a", marginBottom: 3 }}>✓ {WORKFLOW_MODES.find(m2 => m2.id === mode)?.label}</div>}
             {selectedChannels.length > 0 && <div style={{ fontSize: 11, color: "#7aadff" }}>✓ {selectedChannels.length} channel{selectedChannels.length > 1 ? "s" : ""}</div>}
@@ -195,8 +209,8 @@ export default function DevconMarketingAgent() {
           </div>
         </div>
 
-        {/* Main Chat */}
-        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        {/* Main Chat — only this scrolls */}
+        <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
           <div ref={chatRef} style={{ flex: 1, overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 12 }}>
             {messages.length === 0 && (
               <div style={{ margin: "auto", textAlign: "center", maxWidth: 480 }}>
@@ -267,14 +281,26 @@ export default function DevconMarketingAgent() {
                 value={input} onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
                 placeholder="Describe what content you need, event details, or paste raw notes..."
-                style={{ flex: 1, background: "#1a1a2e", border: "1px solid #2a2a4a", color: "#e0e0f0", borderRadius: 12, padding: "12px 14px", fontSize: 13, resize: "none", height: 70, fontFamily: "inherit", outline: "none" }}
+                style={{ flex: 1, background: "#1a1a2e", border: `1px solid ${wordCount > MAX_WORDS ? "#e94560" : "#2a2a4a"}`, color: "#e0e0f0", borderRadius: 12, padding: "12px 14px", fontSize: 13, resize: "none", height: 70, fontFamily: "inherit", outline: "none" }}
               />
-              <button onClick={send} disabled={loading || !input.trim()}
-                style={{ background: loading || !input.trim() ? "#2a2a3a" : "linear-gradient(135deg, #e94560, #c73652)", border: "none", color: "#fff", borderRadius: 12, padding: "0 20px", cursor: loading || !input.trim() ? "not-allowed" : "pointer", fontSize: 18, flexShrink: 0 }}>
+              <button onClick={send} disabled={loading || !input.trim() || wordCount > MAX_WORDS}
+                style={{ background: loading || !input.trim() || wordCount > MAX_WORDS ? "#2a2a3a" : "linear-gradient(135deg, #e94560, #c73652)", border: "none", color: "#fff", borderRadius: 12, padding: "0 20px", cursor: loading || !input.trim() || wordCount > MAX_WORDS ? "not-allowed" : "pointer", fontSize: 18, flexShrink: 0 }}>
                 ↑
               </button>
             </div>
-            <div style={{ fontSize: 10, color: "#444", marginTop: 6, paddingLeft: 2 }}>Shift+Enter for new line · Enter to send · Brand guidelines + HQ strategy auto-applied</div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6, paddingLeft: 2 }}>
+              <div style={{ fontSize: 10, color: "#444" }}>Shift+Enter for new line · Enter to send · Brand guidelines auto-applied</div>
+              <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ fontSize: 11, color: wordCount > MAX_WORDS ? "#e94560" : wordCount > MAX_WORDS * 0.8 ? "#ffaa7a" : "#555" }}>
+                  {wordCount}/{MAX_WORDS} words
+                </span>
+                {remaining !== null && (
+                  <span style={{ fontSize: 11, color: remaining <= 1 ? "#e94560" : remaining <= 2 ? "#ffaa7a" : "#5a8a5a" }}>
+                    {remaining} prompt{remaining !== 1 ? "s" : ""} left today
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
