@@ -45,3 +45,5 @@ next-env.d.
 .env*.local
 node_modules/
 .next/
+
+.vercel
