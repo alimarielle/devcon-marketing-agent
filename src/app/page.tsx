@@ -128,7 +128,143 @@ function MD({ text }: { text: string }) {
   return <div>{nodes}</div>;
 }
 
-// ── Config ───────────────────────────────────────────────────────────
+// ── Visual Content Types ─────────────────────────────────────────────
+type VisualType = "carousel" | "fb_post" | "poster";
+interface CarouselSlide { slideNumber:number; title:string; subtitle?:string; body?:string; highlight?:string; tag?:string; }
+interface CarouselData  { type:"carousel"; slides:CarouselSlide[]; }
+interface FBPostData    { type:"fb_post";  headline:string; subheadline?:string; body:string; cta:string; hashtags:string; badge?:string; }
+interface PosterData    { type:"poster";   eventName:string; tagline?:string; date:string; time?:string; location?:string; details?:string[]; cta?:string; badge?:string; }
+type VisualData = CarouselData | FBPostData | PosterData;
+
+// ── Visual renderers ─────────────────────────────────────────────────
+function CarouselPreview({ data }: { data: CarouselData }) {
+  const [cur, setCur] = useState(0);
+  const s = data.slides[cur];
+  const isFirst = cur === 0, isLast = cur === data.slides.length - 1;
+  const bg = isFirst
+    ? `linear-gradient(135deg, ${C.navy} 0%, ${C.navyDark} 60%, ${C.purple}44 100%)`
+    : isLast
+    ? `linear-gradient(135deg, ${C.brightBlue}33 0%, ${C.navy} 100%)`
+    : `linear-gradient(160deg, ${C.navyDark} 0%, ${C.navy} 100%)`;
+
+  return (
+    <div style={{ userSelect:"none" }}>
+      <div id={`visual-carousel-${cur}`} style={{ width:320, height:320, background:bg, borderRadius:16, padding:"28px 24px", display:"flex", flexDirection:"column", justifyContent:"space-between", border:`1px solid ${C.brightBlue}44`, position:"relative", overflow:"hidden" }}>
+        {/* Corner accent */}
+        <div style={{ position:"absolute", top:0, right:0, width:80, height:80, background:`${C.coral}18`, borderRadius:"0 16px 0 80px" }}/>
+        <div style={{ position:"absolute", bottom:0, left:0, width:60, height:60, background:`${C.brightBlue}15`, borderRadius:"0 60px 0 16px" }}/>
+        {/* Badge */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", zIndex:1 }}>
+          <span style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:C.skyBlue, background:`${C.brightBlue}22`, border:`1px solid ${C.brightBlue}44`, borderRadius:20, padding:"3px 10px" }}>DEVCON PH</span>
+          {s.tag && <span style={{ fontSize:9, fontWeight:700, color:C.gold, background:`${C.gold}18`, border:`1px solid ${C.gold}44`, borderRadius:20, padding:"3px 8px" }}>{s.tag}</span>}
+        </div>
+        {/* Content */}
+        <div style={{ zIndex:1, flex:1, display:"flex", flexDirection:"column", justifyContent:"center", gap:8, padding:"12px 0" }}>
+          {s.subtitle && <div style={{ fontSize:10, fontWeight:600, color:C.teal, letterSpacing:1.5, textTransform:"uppercase" }}>{s.subtitle}</div>}
+          <div style={{ fontSize:isFirst?22:18, fontWeight:900, color:C.white, lineHeight:1.2 }}>{s.title}</div>
+          {s.body && <div style={{ fontSize:12, color:"#b0c4e0", lineHeight:1.6 }}>{s.body}</div>}
+          {s.highlight && <div style={{ fontSize:13, fontWeight:700, color:C.skyBlue, background:`${C.brightBlue}18`, borderLeft:`3px solid ${C.brightBlue}`, padding:"6px 10px", borderRadius:"0 8px 8px 0" }}>{s.highlight}</div>}
+        </div>
+        {/* Slide counter */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", zIndex:1 }}>
+          <div style={{ display:"flex", gap:4 }}>
+            {data.slides.map((_,i) => (
+              <div key={i} onClick={() => setCur(i)} style={{ width:i===cur?16:5, height:5, borderRadius:3, background:i===cur?C.skyBlue:`${C.white}33`, cursor:"pointer", transition:"all .2s" }}/>
+            ))}
+          </div>
+          <span style={{ fontSize:10, color:`${C.white}55` }}>{cur+1} / {data.slides.length}</span>
+        </div>
+      </div>
+      {/* Nav */}
+      <div style={{ display:"flex", gap:8, marginTop:10, justifyContent:"center" }}>
+        <button onClick={() => setCur(p => Math.max(0,p-1))} disabled={isFirst}
+          style={{ background:isFirst?C.navyDark:C.navy, border:`1px solid ${C.border}`, color:isFirst?C.border:C.white, borderRadius:8, padding:"6px 14px", cursor:isFirst?"not-allowed":"pointer", fontSize:13 }}>← Prev</button>
+        <button onClick={() => setCur(p => Math.min(data.slides.length-1,p+1))} disabled={isLast}
+          style={{ background:isLast?C.navyDark:C.navy, border:`1px solid ${C.border}`, color:isLast?C.border:C.white, borderRadius:8, padding:"6px 14px", cursor:isLast?"not-allowed":"pointer", fontSize:13 }}>Next →</button>
+      </div>
+    </div>
+  );
+}
+
+function FBPostPreview({ data }: { data: FBPostData }) {
+  return (
+    <div id="visual-fb" style={{ width:320, background:`linear-gradient(145deg,${C.navyDark},${C.navy})`, borderRadius:16, padding:"28px 24px", border:`1px solid ${C.brightBlue}44`, position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", top:-20, right:-20, width:120, height:120, background:`${C.coral}15`, borderRadius:"50%" }}/>
+      <div style={{ position:"absolute", bottom:-30, left:-20, width:100, height:100, background:`${C.purple}15`, borderRadius:"50%" }}/>
+      {data.badge && <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:C.skyBlue, background:`${C.brightBlue}22`, border:`1px solid ${C.brightBlue}44`, borderRadius:20, padding:"3px 10px", display:"inline-block", marginBottom:14 }}>{data.badge}</div>}
+      <div style={{ position:"relative", zIndex:1 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.coral, letterSpacing:1, marginBottom:6 }}>DEVCON PH</div>
+        <div style={{ fontSize:22, fontWeight:900, color:C.white, lineHeight:1.2, marginBottom:8 }}>{data.headline}</div>
+        {data.subheadline && <div style={{ fontSize:13, fontWeight:600, color:C.skyBlue, marginBottom:10 }}>{data.subheadline}</div>}
+        <div style={{ width:32, height:3, background:`linear-gradient(90deg,${C.brightBlue},${C.purple})`, borderRadius:2, marginBottom:14 }}/>
+        <div style={{ fontSize:12, color:"#b0c4e0", lineHeight:1.7, marginBottom:16 }}>{data.body}</div>
+        <div style={{ background:`linear-gradient(135deg,${C.brightBlue},${C.purple})`, borderRadius:8, padding:"10px 16px", textAlign:"center", fontSize:12, fontWeight:700, color:C.white, marginBottom:12 }}>{data.cta}</div>
+        <div style={{ fontSize:10, color:`${C.skyBlue}99` }}>{data.hashtags}</div>
+      </div>
+    </div>
+  );
+}
+
+function PosterPreview({ data }: { data: PosterData }) {
+  return (
+    <div id="visual-poster" style={{ width:320, background:`linear-gradient(160deg,${C.navyDeep} 0%,${C.navy} 50%,${C.navyDark} 100%)`, borderRadius:16, padding:"28px 24px", border:`1px solid ${C.coral}44`, position:"relative", overflow:"hidden" }}>
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:4, background:`linear-gradient(90deg,${C.coral},${C.purple},${C.brightBlue})` }}/>
+      <div style={{ position:"absolute", top:20, right:-30, width:140, height:140, background:`${C.coral}10`, borderRadius:"50%" }}/>
+      <div style={{ position:"relative", zIndex:1 }}>
+        {data.badge && <div style={{ fontSize:9, fontWeight:800, letterSpacing:2, color:C.coral, background:`${C.coral}18`, border:`1px solid ${C.coral}44`, borderRadius:20, padding:"3px 10px", display:"inline-block", marginBottom:16 }}>{data.badge}</div>}
+        <div style={{ fontSize:9, fontWeight:800, letterSpacing:3, color:C.skyBlue, marginBottom:8 }}>DEVCON PH PRESENTS</div>
+        <div style={{ fontSize:24, fontWeight:900, color:C.white, lineHeight:1.15, marginBottom:6 }}>{data.eventName}</div>
+        {data.tagline && <div style={{ fontSize:12, color:C.gold, fontStyle:"italic", marginBottom:16 }}>{data.tagline}</div>}
+        <div style={{ width:"100%", height:1, background:`${C.border}`, marginBottom:16 }}/>
+        <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:16 }}>
+          {data.date && <div style={{ display:"flex", gap:8, alignItems:"center", fontSize:12, color:"#b0c4e0" }}><span style={{ color:C.skyBlue }}>📅</span>{data.date}{data.time ? ` · ${data.time}` : ""}</div>}
+          {data.location && <div style={{ display:"flex", gap:8, alignItems:"center", fontSize:12, color:"#b0c4e0" }}><span style={{ color:C.coral }}>📍</span>{data.location}</div>}
+        </div>
+        {data.details && data.details.length > 0 && (
+          <div style={{ marginBottom:16 }}>
+            {data.details.map((d,i) => (
+              <div key={i} style={{ fontSize:11, color:"#8ab0d0", marginBottom:4, paddingLeft:10, borderLeft:`2px solid ${C.teal}` }}>{d}</div>
+            ))}
+          </div>
+        )}
+        {data.cta && <div style={{ background:`linear-gradient(135deg,${C.coral},${C.purple})`, borderRadius:8, padding:"10px 16px", textAlign:"center", fontSize:12, fontWeight:700, color:C.white }}>{data.cta}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Visual message wrapper ───────────────────────────────────────────
+function VisualMessage({ data, label }: { data: VisualData; label: string }) {
+  const downloadId = data.type === "carousel" ? "visual-carousel-0"
+    : data.type === "fb_post" ? "visual-fb" : "visual-poster";
+
+  const downloadSlide = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    // Use html2canvas-like approach via inline SVG foreignObject
+    const s = new XMLSerializer();
+    const str = s.serializeToString(el);
+    const blob = new Blob([str], { type:"text/html" });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = `devcon-${data.type}.html`;
+    a.click(); URL.revokeObjectURL(url);
+  };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+      <div style={{ fontSize:11, color:C.teal, fontWeight:600, letterSpacing:.5 }}>✦ {label}</div>
+      {data.type === "carousel" && <CarouselPreview data={data}/>}
+      {data.type === "fb_post"  && <FBPostPreview  data={data}/>}
+      {data.type === "poster"   && <PosterPreview  data={data}/>}
+      <button onClick={() => downloadSlide(downloadId)}
+        style={{ display:"flex", alignItems:"center", gap:6, background:`${C.teal}18`, border:`1px solid ${C.teal}44`, color:C.teal, borderRadius:8, padding:"7px 14px", cursor:"pointer", fontSize:12, fontWeight:600, width:"fit-content" }}>
+        ⬇ Download HTML
+      </button>
+      <div style={{ fontSize:10, color:"#3a4a6a" }}>Open the downloaded file in a browser → screenshot to save as image</div>
+    </div>
+  );
+}
 const SYSTEM_PROMPT = `You are the DEVCON Philippines Marketing AI Agent — an expert social media strategist for DEVCON Studios.
 BRAND: Mission: "Tech-Empowered Philippines For All" | Voice: Pioneering. Open. Collaborative. Impactful.
 Programs: DEVCON Kids, Campus DEVCON, SheIsDEVCON, DEVCON Summit, Smart Contracts Code Camp, AI Academy, DEVCON CREST, Jumpstart Internships
@@ -142,10 +278,11 @@ RULES: 1) Reflect: Pioneering, Open, Collaborative, Impactful. 2) Hashtags: #DEV
 
 const MODES = [
   { id:"content_gen",  label:"Generate Content",  icon:"✦" },
+  { id:"visual",       label:"Visual Content",     icon:"◉" },
   { id:"repurpose",    label:"Repurpose Content",  icon:"⟳" },
   { id:"chapter_post", label:"Chapter Post",       icon:"◈" },
-  { id:"intern_brief", label:"Intern Brief",       icon:"◉" },
-  { id:"buffer_plan",  label:"Buffer Schedule",    icon:"◎" },
+  { id:"intern_brief", label:"Intern Brief",       icon:"◎" },
+  { id:"buffer_plan",  label:"Buffer Schedule",    icon:"▦" },
   { id:"strategy",     label:"Strategy Alignment", icon:"△" },
 ];
 const CHANNELS = [
@@ -165,7 +302,7 @@ const STARTERS = [
   { icon:"▣", text:"Draft a Facebook post for the AI Academy scholarship" },
 ];
 
-type Msg    = { role:"user"|"assistant"; text:string };
+type Msg    = { role:"user"|"assistant"; text:string; visualData?:VisualData; visualLabel?:string };
 type HI     = { role:"user"|"assistant"; content:string };
 type HEntry = { id:string; user_message:string; assistant_message:string; created_at:string };
 
@@ -193,6 +330,7 @@ export default function App() {
   const [remaining,   setRemaining]   = useState<number|null>(null);
   const [history,     setHistory]     = useState<HEntry[]>([]);
   const [histLoading, setHistLoading] = useState(false);
+  const [visualType,  setVisualType]  = useState<VisualType>("carousel");
   const [sessionId]  = useState(() => Math.random().toString(36).slice(2));
   const abortRef = useRef<AbortController|null>(null);
   const chatRef  = useRef<HTMLDivElement>(null);
@@ -239,9 +377,37 @@ export default function App() {
     if (!userText || loading) return;
     setMsgs(p => [...p, { role:"user", text:userText }]);
     setInput(""); setLoading(true); setSideOpen(false);
-    const newHist: HI[] = [...hist, { role:"user", content:buildPrompt(userText) }];
+
     const ctrl = new AbortController();
     abortRef.current = ctrl;
+
+    // ── Visual mode ──────────────────────────────────────────────────
+    if (mode === "visual") {
+      try {
+        const res = await fetch("/api/visual", {
+          method:"POST", signal:ctrl.signal,
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({ prompt:userText, visualType }),
+        });
+        const data: VisualData = await res.json();
+        if (!res.ok) {
+          const err = data as unknown as { error?: string };
+          setMsgs(p => [...p, { role:"assistant", text:`⚠️ ${err.error || "Failed to generate visual."}` }]);
+        } else {
+          const label = visualType === "carousel" ? "Instagram Carousel" : visualType === "fb_post" ? "Facebook Post Card" : "Event Poster";
+          setMsgs(p => [...p, { role:"assistant", text:"__visual__", visualData:data, visualLabel:label } as Msg]);
+          const rem = res.headers.get("X-Prompts-Remaining");
+          if (rem !== null) setRemaining(Number(rem));
+        }
+      } catch (e: unknown) {
+        if (e instanceof Error && e.name !== "AbortError")
+          setMsgs(p => [...p, { role:"assistant", text:"⚠️ Connection error. Please try again." }]);
+      }
+      abortRef.current = null; setLoading(false); return;
+    }
+
+    // ── Text mode ────────────────────────────────────────────────────
+    const newHist: HI[] = [...hist, { role:"user", content:buildPrompt(userText) }];
     try {
       const res = await fetch("/api/chat", {
         method:"POST", signal:ctrl.signal,
@@ -458,7 +624,9 @@ export default function App() {
                       ? { background:C.navy, border:`1px solid ${C.brightBlue}33`, borderRadius:"12px 12px 4px 12px", color:"#d8e8ff" }
                       : { background:C.cardBg, border:`1px solid ${C.border}`, borderRadius:"4px 12px 12px 12px", color:"#c0d4ee" })
                   }}>
-                    {m.role === "assistant" ? <MD text={m.text}/> : m.text}
+                    {m.role === "assistant" && m.visualData
+                      ? <VisualMessage data={m.visualData} label={m.visualLabel || "Visual Content"}/>
+                      : m.role === "assistant" ? <MD text={m.text}/> : m.text}
                   </div>
                 </div>
               ))}
@@ -479,7 +647,17 @@ export default function App() {
         {/* Input bar */}
         <div style={{ padding:"12px 14px 0", background:"#0d1628", borderTop:`1px solid ${C.brightBlue}44`, flexShrink:0 }}>
 
-          {/* Active selection tags with ✕ — above the textarea */}
+          {/* Visual type picker — shown only in Visual mode */}
+          {mode === "visual" && (
+            <div style={{ display:"flex", gap:6, marginBottom:10 }}>
+              {(["carousel","fb_post","poster"] as VisualType[]).map(vt => (
+                <button key={vt} onClick={() => setVisualType(vt)}
+                  style={{ fontSize:11, fontWeight:600, borderRadius:20, padding:"4px 12px", cursor:"pointer", border:`1px solid ${visualType===vt ? C.skyBlue : C.border}`, background:visualType===vt ? `${C.brightBlue}22` : "transparent", color:visualType===vt ? C.skyBlue : C.muted, transition:"all .15s" }}>
+                  {vt === "carousel" ? "🎠 Carousel" : vt === "fb_post" ? "📘 FB Post" : "📣 Poster"}
+                </button>
+              ))}
+            </div>
+          )}
           {(mode || channels.length > 0 || chapter) && (
             <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
               {mode && (
