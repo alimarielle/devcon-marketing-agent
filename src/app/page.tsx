@@ -294,8 +294,8 @@ export default function App() {
         <div style={sLabel}>WORKFLOW MODE</div>
         {MODES.map(m => (
           <div key={m.id} style={{ display:"flex", alignItems:"center", gap:4, marginBottom:2 }}>
-            <button onClick={() => setMode(null)} style={{ ...xBtn, visibility:mode===m.id?"visible":"hidden" }}>✕</button>
-            <button onClick={() => setMode(mode === m.id ? null : m.id)} style={{ ...sBtn, ...(mode===m.id ? sBtnA : {}), flex:1 }}>
+            <button onClick={() => setMode(null)} className="x-btn" style={{ ...xBtn, visibility:mode===m.id?"visible":"hidden" }}>✕</button>
+            <button onClick={() => setMode(mode === m.id ? null : m.id)} className={`side-btn${mode===m.id?" side-btn-active":""}`} style={{ ...sBtn, ...(mode===m.id ? sBtnA : {}), flex:1 }}>
               <span style={sBtnIcon}>{m.icon}</span>{m.label}
             </button>
           </div>
@@ -305,8 +305,8 @@ export default function App() {
         <div style={{ ...sLabel, marginTop:20 }}>CHANNEL</div>
         {CHANNELS.map(c => (
           <div key={c.id} style={{ display:"flex", alignItems:"center", gap:4, marginBottom:2 }}>
-            <button onClick={() => toggleCh(c.id)} style={{ ...xBtn, visibility:channels.includes(c.id)?"visible":"hidden" }}>✕</button>
-            <button onClick={() => toggleCh(c.id)} style={{ ...sBtn, ...(channels.includes(c.id) ? sBtnA : {}), flex:1 }}>
+            <button onClick={() => toggleCh(c.id)} className="x-btn" style={{ ...xBtn, visibility:channels.includes(c.id)?"visible":"hidden" }}>✕</button>
+            <button onClick={() => toggleCh(c.id)} className={`side-btn${channels.includes(c.id)?" side-btn-active":""}`} style={{ ...sBtn, ...(channels.includes(c.id) ? sBtnA : {}), flex:1 }}>
               <span style={sBtnIcon}>{c.icon}</span>{c.label}
             </button>
           </div>
@@ -483,7 +483,7 @@ export default function App() {
           {(mode || channels.length > 0 || chapter) && (
             <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
               {mode && (
-                <button onClick={() => setMode(null)} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.purple}33`, border:`1px solid ${C.purple}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={() => setMode(null)} className="tag-btn" style={{ display:"flex", alignItems:"center", gap:5, background:`${C.purple}33`, border:`1px solid ${C.purple}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
                   {activeMode?.icon} {activeMode?.label}
                   <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
                 </button>
@@ -491,14 +491,14 @@ export default function App() {
               {channels.map(id => {
                 const c = CHANNELS.find(x => x.id === id);
                 return (
-                  <button key={id} onClick={() => toggleCh(id)} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.teal}25`, border:`1px solid ${C.teal}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                  <button key={id} onClick={() => toggleCh(id)} className="tag-btn" style={{ display:"flex", alignItems:"center", gap:5, background:`${C.teal}25`, border:`1px solid ${C.teal}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
                     {c?.icon} {c?.label}
                     <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
                   </button>
                 );
               })}
               {chapter && (
-                <button onClick={() => setChapter("")} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.gold}25`, border:`1px solid ${C.gold}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                <button onClick={() => setChapter("")} className="tag-btn" style={{ display:"flex", alignItems:"center", gap:5, background:`${C.gold}25`, border:`1px solid ${C.gold}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
                   ◈ {chapter}
                   <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
                 </button>
@@ -507,13 +507,13 @@ export default function App() {
           )}
 
           {/* Textarea box */}
-          <div style={{ display:"flex", gap:8, background:"#141f35", border:`2px solid ${wc > MAX_WORDS ? C.coral : C.brightBlue}55`, borderRadius:14, padding:"10px 10px 10px 16px", alignItems:"flex-end", transition:"border-color .2s", boxShadow:`0 0 0 1px ${wc > MAX_WORDS ? C.coral : C.brightBlue}22` }}>
+          <div className="input-box" style={{ display:"flex", gap:8, background:"#141f35", border:`2px solid ${wc > MAX_WORDS ? C.coral : C.brightBlue}55`, borderRadius:14, padding:"10px 10px 10px 16px", alignItems:"flex-end", transition:"border-color .2s, box-shadow .2s" }}>
             <textarea value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Engineer your next strategy..."
               style={{ flex:1, background:"transparent", border:"none", color:"#e8f0ff", fontSize:14, resize:"none", height:54, lineHeight:1.6, paddingTop:4, fontFamily:"inherit", caretColor:C.skyBlue }}/>
-            <button onClick={() => send()} disabled={loading || !input.trim() || wc > MAX_WORDS} className="send-btn-pulse"
-              style={{ background:loading||!input.trim()||wc>MAX_WORDS ? "#1a2a44" : `linear-gradient(135deg,${C.brightBlue},${C.purple})`, border:`1px solid ${loading||!input.trim()||wc>MAX_WORDS ? C.border : C.brightBlue}`, color:C.white, borderRadius:10, width:40, height:40, cursor:loading||!input.trim()||wc>MAX_WORDS?"not-allowed":"pointer", fontSize:15, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s" }}>▶</button>
+            <button onClick={() => send()} disabled={loading || !input.trim() || wc > MAX_WORDS} className="send-btn"
+              style={{ background:loading||!input.trim()||wc>MAX_WORDS ? "#1a2a44" : `linear-gradient(135deg,${C.brightBlue},${C.purple})`, border:`1px solid ${loading||!input.trim()||wc>MAX_WORDS ? C.border : C.brightBlue}`, color:C.white, borderRadius:10, width:40, height:40, cursor:loading||!input.trim()||wc>MAX_WORDS?"not-allowed":"pointer", fontSize:15, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center" }}>▶</button>
           </div>
 
           {/* Meta row */}
@@ -532,27 +532,63 @@ export default function App() {
       </main>
 
       <style>{`
-        @font-face {
-          font-family: 'Proxima Nova';
-          src: local('Proxima Nova'), local('ProximaNova');
-        }
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,400;0,600;0,700;0,800;0,900;1,700;1,800;1,900&display=swap');
-        * { box-sizing:border-box; font-family:'Proxima Nova','Montserrat',system-ui,sans-serif !important; }
-        body { margin:0; }
         textarea:focus { outline:none !important; }
-        button:hover { opacity:.82; }
         select:focus { outline:none; }
         ::-webkit-scrollbar { width:5px; }
         ::-webkit-scrollbar-track { background:transparent; }
         ::-webkit-scrollbar-thumb { background:${C.border}; border-radius:3px; }
         ::-webkit-scrollbar-thumb:hover { background:${C.navy}; }
-        @keyframes blink    { 0%,80%,100%{opacity:.15} 40%{opacity:1} }
-        @keyframes fadeUp   { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes slideIn  { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
-        .msg-bubble         { animation:fadeUp .25s ease forwards; }
-        .starter-card:hover { border-color:${C.brightBlue} !important; transform:translateY(-2px) !important; background:#1a2840 !important; }
-        .hist-item:hover    { background:${C.navy} !important; border-color:${C.brightBlue}44 !important; }
-        .send-btn-pulse:not(:disabled):hover { transform:scale(1.06); }
+
+        /* Loading */
+        @keyframes blink   { 0%,80%,100%{opacity:.15} 40%{opacity:1} }
+        @keyframes fadeUp  { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+        @keyframes slideIn { from{opacity:0;transform:translateX(-10px)} to{opacity:1;transform:translateX(0)} }
+        @keyframes popIn   { 0%{opacity:0;transform:scale(.85)} 60%{transform:scale(1.05)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes shimmer { 0%{background-position:-200% center} 100%{background-position:200% center} }
+        @keyframes pulseGlow { 0%,100%{box-shadow:0 0 0 0 ${C.brightBlue}33} 50%{box-shadow:0 0 12px 3px ${C.brightBlue}44} }
+
+        /* Sidebar buttons */
+        .side-btn { transition: background .15s, color .15s, border-color .15s, transform .1s !important; }
+        .side-btn:hover { background:${C.brightBlue}10 !important; color:${C.white} !important; transform:translateX(2px); }
+        .side-btn:active { transform:translateX(0) scale(.97) !important; }
+        .side-btn-active { animation: slideIn .18s ease forwards; }
+
+        /* X remove button in sidebar */
+        .x-btn { transition: color .15s, transform .15s !important; }
+        .x-btn:hover { color:${C.coral} !important; transform:scale(1.3) !important; }
+        .x-btn:active { transform:scale(.9) !important; }
+
+        /* Starter cards */
+        .starter-card { transition: border-color .18s, transform .18s, background .18s, box-shadow .18s !important; }
+        .starter-card:hover { border-color:${C.brightBlue} !important; transform:translateY(-3px) !important; background:#1a2840 !important; box-shadow:0 8px 24px ${C.brightBlue}22 !important; }
+        .starter-card:active { transform:translateY(-1px) scale(.98) !important; }
+
+        /* Tag remove buttons */
+        .tag-btn { transition: background .15s, box-shadow .15s, transform .12s !important; }
+        .tag-btn:hover { transform:scale(1.03) !important; box-shadow:0 4px 12px rgba(0,0,0,.3) !important; }
+        .tag-btn:active { transform:scale(.96) !important; }
+
+        /* Chat bubbles */
+        .msg-bubble { animation: fadeUp .22s ease forwards; }
+
+        /* Send button */
+        .send-btn { transition: all .18s !important; }
+        .send-btn:not(:disabled):hover { transform:scale(1.08) !important; box-shadow:0 4px 16px ${C.brightBlue}55 !important; }
+        .send-btn:not(:disabled):active { transform:scale(.94) !important; }
+
+        /* History items */
+        .hist-item { transition: background .15s, border-color .15s, transform .12s !important; }
+        .hist-item:hover { background:${C.navy} !important; border-color:${C.brightBlue}66 !important; transform:translateX(3px) !important; }
+        .hist-item:active { transform:translateX(1px) !important; }
+
+        /* Input box focus glow */
+        .input-box:focus-within { border-color:${C.brightBlue}88 !important; box-shadow:0 0 0 3px ${C.brightBlue}18 !important; }
+
+        /* Tour dots */
+        .tour-dot { transition: all .25s !important; cursor:pointer; }
+        .tour-dot:hover { background:${C.muted} !important; }
+
+        /* Responsive */
         @media(max-width:768px) {
           .desktop-sidebar { display:none !important; }
           .mobile-topbar   { display:flex !important; }

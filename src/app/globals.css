@@ -1,16 +1,20 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
 * {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
+  font-family: 'Inter', system-ui, sans-serif !important;
 }
 
-html, body {
+html, body, #__next {
   height: 100%;
-  background: #0a0a0f;
-  color: #e8e8f0;
+  overflow: hidden;
+  background: #0C1220;
+  color: #F0F4FF;
 }
 
-::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar { width: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #2a2a4a; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #3a3a6a; }
+::-webkit-scrollbar-thumb { background: #1E2E48; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1A2A4A; }
