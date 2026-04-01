@@ -68,7 +68,7 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
         ))}
       </svg>
       <div style={{ opacity:phase>=2?1:0, transition:"opacity .5s ease", textAlign:"center" }}>
-        <div style={{ fontWeight:900, fontSize:26, letterSpacing:6, color:C.white }}>DEVCON</div>
+        <div style={{ fontWeight:900, fontSize:26, letterSpacing:6, color:C.white }}>DEVCON STUDIOS</div>
         <div style={{ fontSize:11, color:C.muted, letterSpacing:3, marginTop:4 }}>MARKETING AGENT</div>
       </div>
     </div>
@@ -275,7 +275,7 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
           <DevconCircles size={36}/>
           <div>
-            <div style={{fontWeight:900,fontSize:13,color:C.white,letterSpacing:2}}>DEVCON</div>
+            <div style={{fontWeight:900,fontSize:13,color:C.white,letterSpacing:2}}>DEVCON STUDIOS</div>
             <div style={{fontSize:10,color:C.muted,marginTop:1}}>Marketing Agent</div>
           </div>
         </div>
@@ -404,7 +404,7 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,flexWrap:"wrap",justifyContent:"center"}}>
                 <DevconCircles size={56}/>
                 <h1 style={{fontSize:"clamp(32px,6vw,68px)",fontWeight:900,lineHeight:1.05,textAlign:"left"}}>
-                  <span style={{color:C.white}}>DEVCON </span>
+                  <span style={{color:C.white}}>DEVCON STUDIOS </span>
                   <span style={{color:C.skyBlue,fontStyle:"italic"}}>{"Marketing\nAgent"}</span>
                 </h1>
               </div>
