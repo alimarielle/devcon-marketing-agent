@@ -268,7 +268,21 @@ export default function App() {
   const abortRef = useRef<AbortController|null>(null);
   const chatRef  = useRef<HTMLDivElement>(null);
 
-  const MAX_WORDS = 200;
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  // Android keyboard visibility fix via visualViewport API
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const onResize = () => {
+      const offset = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardOffset(Math.max(0, offset));
+      if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
+    };
+    vv.addEventListener("resize", onResize);
+    vv.addEventListener("scroll", onResize);
+    return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
+  }, []);
   const wc = input.trim().split(/\s+/).filter(Boolean).length;
   const roleInfo = ROLES.find(r=>r.id===userRole);
 
@@ -498,8 +512,8 @@ export default function App() {
           {remaining!==null&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:600,color:remaining===0?C.coral:remaining<=2?C.gold:C.teal}}>{remaining}/5</span>}
         </div>
 
-        {/* Chat area — scrolls independently, padded so input never covers content */}
-        <div ref={chatRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:200}}>
+        {/* Chat area */}
+        <div ref={chatRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:16}}>
           {msgs.length===0?(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100%",padding:"32px 20px",textAlign:"center"}}>
               <div style={{fontSize:10,letterSpacing:3,color:C.muted,border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 14px",marginBottom:20}}>· AI POWERED STRATEGIC ENGINE ·</div>
@@ -564,8 +578,8 @@ export default function App() {
           )}
         </div>
 
-        {/* Input bar — fixed to bottom on mobile, sticky on desktop */}
-        <div className="input-bar" style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0,zIndex:20}}>
+        {/* Input bar — sits at bottom of flex column, shifts up with keyboard on mobile */}
+        <div className="input-bar" style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0,zIndex:20,marginBottom:keyboardOffset}}>
           {/* Visual type picker */}
           {mode==="visual"&&(
             <div style={{display:"flex",gap:6,marginBottom:10}}>
@@ -639,14 +653,6 @@ export default function App() {
           .desktop-sidebar{display:none!important}
           .mobile-topbar{display:flex!important}
           .history-panel{left:0!important;width:100vw!important;z-index:45!important}
-          /* Fix: pin input bar above keyboard on Android/iOS */
-          .input-bar{
-            position:fixed!important;
-            bottom:0!important;
-            left:0!important;
-            right:0!important;
-            padding-bottom:calc(12px + env(safe-area-inset-bottom))!important;
-          }
           .input-box textarea{font-size:16px!important;}
         }
       `}</style>
