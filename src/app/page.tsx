@@ -364,7 +364,7 @@ export default function App() {
               <div key={h.id} onClick={()=>{
                 setMsgs([{role:"user",text:h.user_message},{role:"assistant",text:h.assistant_message}]);
                 setHistOpen(false);
-              }} style={{padding:"10px",borderRadius:8,cursor:"pointer",marginBottom:4,border:`1px solid ${C.border}`,background:C.navyDeep,transition:"border-color .15s"}}>
+              }} className="hist-item" style={{padding:"10px",borderRadius:8,cursor:"pointer",marginBottom:4,border:`1px solid ${C.border}`,background:C.navyDeep}}>
                 <div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.5}}>
                   <span style={{color:C.skyBlue,marginRight:6}}>▸</span>
                   {h.user_message.slice(0,72)}{h.user_message.length>72?"…":""}
@@ -414,8 +414,8 @@ export default function App() {
               </p>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10,width:"100%",maxWidth:820}}>
                 {STARTERS.map((c,i)=>(
-                  <button key={i} onClick={()=>send(c.text)}
-                    style={{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:12,transition:"border-color .15s"}}>
+                  <button key={i} onClick={()=>send(c.text)} className="starter-card"
+                    style={{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:12,animation:`fadeUp .3s ease ${i*0.07}s both`}}>
                     <span style={{fontSize:16,color:C.brightBlue,flexShrink:0,marginTop:2}}>{c.icon}</span>
                     <span style={{color:"#b0c4e0",fontSize:13,lineHeight:1.5}}>{c.text}</span>
                   </button>
@@ -425,7 +425,7 @@ export default function App() {
           ):(
             <div style={{display:"flex",flexDirection:"column",gap:16,padding:"20px 16px 8px"}}>
               {msgs.map((m,i)=>(
-                <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",alignItems:"flex-start",gap:8}}>
+                <div key={i} className="msg-bubble" style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",alignItems:"flex-start",gap:8,animationDelay:`${i===msgs.length-1?.05:0}s`}}>
                   {m.role==="assistant"&&(
                     <div style={{width:30,height:30,borderRadius:8,background:C.navyDark,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       <DevconCircles size={20}/>
@@ -482,14 +482,24 @@ export default function App() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap');
         @keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
+        @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+        @keyframes slideIn{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
         *{box-sizing:border-box;font-family:'Proxima Nova','Montserrat',system-ui,sans-serif}
         textarea:focus{outline:none!important}
-        button:hover{opacity:.85}
+        button:hover{opacity:.82}
         select:focus{outline:none}
         ::-webkit-scrollbar{width:5px}
         ::-webkit-scrollbar-track{background:transparent}
         ::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}
         ::-webkit-scrollbar-thumb:hover{background:${C.navy}}
+        .msg-bubble{animation:fadeUp .25s ease forwards}
+        .starter-card{transition:border-color .18s,transform .18s,background .18s!important}
+        .starter-card:hover{border-color:${C.brightBlue}!important;transform:translateY(-2px)!important;background:#1a2840!important}
+        .side-btn-anim{animation:slideIn .15s ease forwards}
+        .hist-item{transition:background .15s,border-color .15s!important}
+        .hist-item:hover{background:${C.navy}!important;border-color:${C.brightBlue}44!important}
+        .send-btn-pulse:not(:disabled):hover{transform:scale(1.06);transition:transform .15s}
         @media(max-width:768px){
           .desktop-sidebar{display:none!important}
           .mobile-topbar{display:flex!important}
