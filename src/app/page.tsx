@@ -477,30 +477,54 @@ export default function App() {
         </div>
 
         {/* Input bar */}
-        <div style={{ padding:"10px 14px 0", background:C.navyDark, borderTop:`1px solid ${C.border}`, flexShrink:0 }}>
+        <div style={{ padding:"12px 14px 0", background:"#0d1628", borderTop:`1px solid ${C.brightBlue}44`, flexShrink:0 }}>
+
+          {/* Active selection tags with ✕ — above the textarea */}
           {(mode || channels.length > 0 || chapter) && (
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:8 }}>
-              {mode && <span style={{ ...tag, background:`${C.purple}22`, border:`1px solid ${C.purple}55`, color:C.skyBlue }}>{activeMode?.icon} {activeMode?.label}</span>}
-              {channels.map(id => { const c = CHANNELS.find(x => x.id === id); return <span key={id} style={{ ...tag, background:`${C.teal}18`, border:`1px solid ${C.teal}44`, color:C.teal }}>{c?.icon} {c?.label}</span>; })}
-              {chapter && <span style={{ ...tag, background:`${C.gold}18`, border:`1px solid ${C.gold}44`, color:C.gold }}>◈ {chapter}</span>}
+            <div style={{ display:"flex", gap:6, flexWrap:"wrap", marginBottom:10 }}>
+              {mode && (
+                <button onClick={() => setMode(null)} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.purple}33`, border:`1px solid ${C.purple}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                  {activeMode?.icon} {activeMode?.label}
+                  <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
+                </button>
+              )}
+              {channels.map(id => {
+                const c = CHANNELS.find(x => x.id === id);
+                return (
+                  <button key={id} onClick={() => toggleCh(id)} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.teal}25`, border:`1px solid ${C.teal}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                    {c?.icon} {c?.label}
+                    <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
+                  </button>
+                );
+              })}
+              {chapter && (
+                <button onClick={() => setChapter("")} style={{ display:"flex", alignItems:"center", gap:5, background:`${C.gold}25`, border:`1px solid ${C.gold}`, color:C.white, borderRadius:20, padding:"4px 10px 4px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                  ◈ {chapter}
+                  <span style={{ marginLeft:2, color:C.coral, fontWeight:700, fontSize:13, lineHeight:1 }}>✕</span>
+                </button>
+              )}
             </div>
           )}
-          <div style={{ display:"flex", gap:8, background:C.inputBg, border:`1px solid ${wc > MAX_WORDS ? C.coral : C.border}`, borderRadius:14, padding:"8px 8px 8px 14px", alignItems:"flex-end", transition:"border-color .2s" }}>
+
+          {/* Textarea box */}
+          <div style={{ display:"flex", gap:8, background:"#141f35", border:`2px solid ${wc > MAX_WORDS ? C.coral : C.brightBlue}55`, borderRadius:14, padding:"10px 10px 10px 16px", alignItems:"flex-end", transition:"border-color .2s", boxShadow:`0 0 0 1px ${wc > MAX_WORDS ? C.coral : C.brightBlue}22` }}>
             <textarea value={input} onChange={e => setInput(e.target.value)}
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
               placeholder="Engineer your next strategy..."
-              style={{ flex:1, background:"transparent", border:"none", color:C.white, fontSize:13, resize:"none", height:50, lineHeight:1.6, paddingTop:4, fontFamily:"inherit" }}/>
+              style={{ flex:1, background:"transparent", border:"none", color:"#e8f0ff", fontSize:14, resize:"none", height:54, lineHeight:1.6, paddingTop:4, fontFamily:"inherit", caretColor:C.skyBlue }}/>
             <button onClick={() => send()} disabled={loading || !input.trim() || wc > MAX_WORDS} className="send-btn-pulse"
-              style={{ background:loading||!input.trim()||wc>MAX_WORDS ? C.navyDeep : `linear-gradient(135deg,${C.brightBlue},${C.purple})`, border:"none", color:C.white, borderRadius:10, width:38, height:38, cursor:loading||!input.trim()||wc>MAX_WORDS?"not-allowed":"pointer", fontSize:14, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"background .2s" }}>▶</button>
+              style={{ background:loading||!input.trim()||wc>MAX_WORDS ? "#1a2a44" : `linear-gradient(135deg,${C.brightBlue},${C.purple})`, border:`1px solid ${loading||!input.trim()||wc>MAX_WORDS ? C.border : C.brightBlue}`, color:C.white, borderRadius:10, width:40, height:40, cursor:loading||!input.trim()||wc>MAX_WORDS?"not-allowed":"pointer", fontSize:15, flexShrink:0, display:"flex", alignItems:"center", justifyContent:"center", transition:"all .2s" }}>▶</button>
           </div>
+
           {/* Meta row */}
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"5px 2px 0" }}>
-            <span style={{ fontSize:10, color:"#2a3a5a" }}>Shift+Enter for new line · Brand guidelines auto-applied</span>
-            <span style={{ fontSize:11, color:wc>MAX_WORDS?C.coral:wc>160?C.gold:"#2a3a5a" }}>{wc}/{MAX_WORDS}w</span>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"6px 2px 0" }}>
+            <span style={{ fontSize:11, color:C.muted }}>Shift+Enter for new line · Brand guidelines auto-applied</span>
+            <span style={{ fontSize:12, fontWeight:600, color:wc>MAX_WORDS?C.coral:wc>160?C.gold:C.muted }}>{wc}/{MAX_WORDS}w</span>
           </div>
-          {/* Disclaimer footer */}
-          <div style={{ textAlign:"center", padding:"6px 0 10px", borderTop:`1px solid ${C.border}`, marginTop:8 }}>
-            <span style={{ fontSize:10, color:"#2a3a5a" }}>
+
+          {/* Disclaimer */}
+          <div style={{ textAlign:"center", padding:"8px 0 12px", borderTop:`1px solid ${C.border}`, marginTop:8 }}>
+            <span style={{ fontSize:11, color:C.gold, fontWeight:500 }}>
               ⚠️ AI-generated content may be inaccurate. Always review and verify before publishing.
             </span>
           </div>
