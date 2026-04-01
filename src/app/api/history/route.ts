@@ -13,23 +13,18 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = getSupabase();
     const { sessionId, userMsg, assistantMsg } = await req.json();
-
-    if (!userMsg || !assistantMsg) {
+    if (!userMsg || !assistantMsg)
       return NextResponse.json({ error: "Missing fields" }, { status: 400 });
-    }
-
     const { error } = await supabase.from("prompt_history").insert({
       session_id:        sessionId ?? "anonymous",
       user_message:      userMsg,
       assistant_message: assistantMsg,
       created_at:        new Date().toISOString(),
     });
-
     if (error) {
       console.error("Supabase insert error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("History POST error:", e);
@@ -37,7 +32,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET — fetch ALL history (no session filter), newest first, last 50
+// GET — fetch last 50 prompts across all sessions, newest first
 export async function GET() {
   try {
     const supabase = getSupabase();
@@ -46,12 +41,10 @@ export async function GET() {
       .select("id, session_id, user_message, assistant_message, created_at")
       .order("created_at", { ascending: false })
       .limit(50);
-
     if (error) {
       console.error("Supabase fetch error:", error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
-
     return NextResponse.json(data ?? []);
   } catch (e) {
     console.error("History GET error:", e);
