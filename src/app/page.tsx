@@ -225,7 +225,7 @@ const STARTERS = [
   {icon:"▣", text:"Draft a Facebook post for the AI Academy scholarship"},
 ];
 
-type Msg    = {role:"user"|"assistant"; text:string; visualData?:VisualData; visualLabel?:string};
+type Msg    = {role:"user"|"assistant"; text:string; visualData?:VisualData; visualLabel?:string; tags?:{mode?:string; channels?:string[]; chapter?:string}};
 type HI     = {role:"user"|"assistant"; content:string};
 type HEntry = {id:string; user_message:string; assistant_message:string; created_at:string};
 
@@ -301,7 +301,13 @@ export default function App() {
   const send=async(text?:string)=>{
     const userText=(text||input).trim();
     if(!userText||loading) return;
-    setMsgs(p=>[...p,{role:"user",text:userText}]);
+    // Snapshot active tags at send time
+    const activeTags = {
+      mode: mode ? MODES.find(m=>m.id===mode)?.label : undefined,
+      channels: channels.length ? CHANNELS.filter(c=>channels.includes(c.id)).map(c=>c.label) : undefined,
+      chapter: chapter||undefined,
+    };
+    setMsgs(p=>[...p,{role:"user",text:userText,tags:activeTags}]);
     setInput(""); setLoading(true); setSideOpen(false);
     const ctrl=new AbortController(); abortRef.current=ctrl;
 
@@ -427,7 +433,7 @@ export default function App() {
   );
 
   return(
-    <div style={{display:"flex",height:"100vh",background:C.navyDeep,color:C.white,overflow:"hidden"}}>
+    <div style={{display:"flex",height:"100dvh",background:C.navyDeep,color:C.white,overflow:"hidden"}}>
       {showTour&&<OnboardingTour onClose={()=>setShowTour(false)}/>}
 
       {/* Desktop sidebar */}
@@ -435,7 +441,6 @@ export default function App() {
         style={{width:238,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden"}}>
         {SideInner}
       </aside>
-
       {/* Mobile sidebar overlay */}
       {sideOpen&&(
         <div style={{position:"fixed",inset:0,zIndex:50,display:"flex"}}>
@@ -469,7 +474,7 @@ export default function App() {
       )}
 
       {/* Main */}
-      <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
+      <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0,minHeight:0}}>
         {/* Mobile topbar */}
         <div className="mobile-topbar" style={{display:"none",padding:"10px 14px",background:C.navyDark,borderBottom:`1px solid ${C.border}`,alignItems:"center",gap:12,flexShrink:0}}>
           <button data-menu-btn onClick={()=>setSideOpen(p=>!p)} style={{background:"none",border:"none",color:C.white,fontSize:22,cursor:"pointer",lineHeight:1,padding:"2px 4px"}}>☰</button>
@@ -478,8 +483,8 @@ export default function App() {
           {remaining!==null&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:600,color:remaining===0?C.coral:remaining<=2?C.gold:C.teal}}>{remaining}/5</span>}
         </div>
 
-        {/* Chat area */}
-        <div ref={chatRef} style={{flex:1,overflowY:"auto",padding:"0 0 8px"}}>
+        {/* Chat area — scrolls independently */}
+        <div ref={chatRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:"0 0 8px"}}>
           {msgs.length===0?(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100%",padding:"32px 20px",textAlign:"center"}}>
               <div style={{fontSize:10,letterSpacing:3,color:C.muted,border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 14px",marginBottom:20}}>· AI POWERED STRATEGIC ENGINE ·</div>
@@ -513,12 +518,22 @@ export default function App() {
                   {m.role==="assistant"&&(
                     <div style={{width:30,height:30,borderRadius:8,background:C.navyDark,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:13,color:C.skyBlue,fontWeight:700}}>DS</div>
                   )}
-                  <div style={{maxWidth:"min(76%,640px)",padding:"11px 15px",fontSize:13,lineHeight:1.72,wordBreak:"break-word",
-                    ...(m.role==="user"
-                      ?{background:C.navy,border:`1px solid ${C.brightBlue}33`,borderRadius:"12px 12px 4px 12px",color:"#d8e8ff"}
-                      :{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",color:"#c0d4ee"})}}>
-                    {m.role==="assistant"&&m.visualData?<VisualMessage data={m.visualData} label={m.visualLabel||"Visual Content"}/>
-                      :m.role==="assistant"?<MD text={m.text}/>:m.text}
+                  <div style={{maxWidth:"min(76%,640px)",display:"flex",flexDirection:"column",gap:5,alignItems:m.role==="user"?"flex-end":"flex-start"}}>
+                    {/* Context tags on user messages */}
+                    {m.role==="user"&&m.tags&&(m.tags.mode||m.tags.channels?.length||m.tags.chapter)&&(
+                      <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>
+                        {m.tags.mode&&<span style={{fontSize:10,fontWeight:600,color:C.skyBlue,background:`${C.purple}22`,border:`1px solid ${C.purple}44`,borderRadius:20,padding:"2px 8px"}}>{m.tags.mode}</span>}
+                        {m.tags.channels?.map(ch=><span key={ch} style={{fontSize:10,fontWeight:600,color:C.teal,background:`${C.teal}18`,border:`1px solid ${C.teal}33`,borderRadius:20,padding:"2px 8px"}}>{ch}</span>)}
+                        {m.tags.chapter&&<span style={{fontSize:10,fontWeight:600,color:C.gold,background:`${C.gold}18`,border:`1px solid ${C.gold}33`,borderRadius:20,padding:"2px 8px"}}>📍 {m.tags.chapter}</span>}
+                      </div>
+                    )}
+                    <div style={{padding:"11px 15px",fontSize:13,lineHeight:1.72,wordBreak:"break-word",
+                      ...(m.role==="user"
+                        ?{background:C.navy,border:`1px solid ${C.brightBlue}33`,borderRadius:"12px 12px 4px 12px",color:"#d8e8ff"}
+                        :{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",color:"#c0d4ee"})}}>
+                      {m.role==="assistant"&&m.visualData?<VisualMessage data={m.visualData} label={m.visualLabel||"Visual Content"}/>
+                        :m.role==="assistant"?<MD text={m.text}/>:m.text}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -534,8 +549,8 @@ export default function App() {
           )}
         </div>
 
-        {/* Input bar */}
-        <div style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0}}>
+        {/* Input bar — sticky, always visible above keyboard */}
+        <div style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0,position:"sticky" as const,bottom:0,zIndex:10}}>
           {/* Visual type picker */}
           {mode==="visual"&&(
             <div style={{display:"flex",gap:6,marginBottom:10}}>
@@ -609,6 +624,9 @@ export default function App() {
           .desktop-sidebar{display:none!important}
           .mobile-topbar{display:flex!important}
           .history-panel{left:0!important;width:100vw!important;z-index:45!important}
+          /* Keep input visible when mobile keyboard opens */
+          main { min-height: 0; }
+          .input-box textarea { font-size:16px!important; } /* prevents iOS auto-zoom on focus */
         }
       `}</style>
     </div>
