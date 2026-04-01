@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 // ── DEVCON palette from 16yr poster ─────────────────────────────────
 const C = {
@@ -68,7 +68,7 @@ function LoadingScreen({ onDone }: { onDone: () => void }) {
         ))}
       </svg>
       <div style={{ opacity:phase>=2?1:0, transition:"opacity .5s ease", textAlign:"center" }}>
-        <div style={{ fontWeight:900, fontSize:26, letterSpacing:6, color:C.white }}>DEVCON STUDIOS</div>
+        <div style={{ fontWeight:900, fontSize:26, letterSpacing:6, color:C.white }}>DEVCON</div>
         <div style={{ fontSize:11, color:C.muted, letterSpacing:3, marginTop:4 }}>MARKETING AGENT</div>
       </div>
     </div>
@@ -275,7 +275,7 @@ export default function App() {
         <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
           <DevconCircles size={36}/>
           <div>
-            <div style={{fontWeight:900,fontSize:13,color:C.white,letterSpacing:2}}>DEVCON STUDIOS</div>
+            <div style={{fontWeight:900,fontSize:13,color:C.white,letterSpacing:2}}>DEVCON</div>
             <div style={{fontSize:10,color:C.muted,marginTop:1}}>Marketing Agent</div>
           </div>
         </div>
@@ -345,8 +345,8 @@ export default function App() {
 
       {/* ── HISTORY PANEL ── */}
       {histOpen&&(
-        <div style={{width:270,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden",
-          position:"absolute" as const,left:238,top:0,bottom:0,zIndex:40}}
+        <div style={{width:270,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column" as const,flexShrink:0,overflow:"hidden",
+          position:"fixed" as const,left:238,top:0,bottom:0,zIndex:40}}
           className="history-panel">
           <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 14px 12px",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontWeight:700,fontSize:13}}>Prompt History</span>
@@ -386,7 +386,7 @@ export default function App() {
           <button data-menu-btn onClick={()=>setSideOpen(p=>!p)}
             style={{background:"none",border:"none",color:C.white,fontSize:22,cursor:"pointer",lineHeight:1,padding:"2px 4px"}}>☰</button>
           <DevconCircles size={24}/>
-          <span style={{fontWeight:800,fontSize:13,letterSpacing:2}}>DEVCON STUDIOS</span>
+          <span style={{fontWeight:800,fontSize:13,letterSpacing:2}}>DEVCON</span>
           {remaining!==null&&(
             <span style={{marginLeft:"auto",fontSize:10,color:remaining<=1?C.coral:remaining<=2?C.gold:C.teal}}>
               {remaining}/5 left
@@ -404,7 +404,7 @@ export default function App() {
               <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,flexWrap:"wrap",justifyContent:"center"}}>
                 <DevconCircles size={56}/>
                 <h1 style={{fontSize:"clamp(32px,6vw,68px)",fontWeight:900,lineHeight:1.05,textAlign:"left"}}>
-                  <span style={{color:C.white}}>DEVCON STUDIOS</span>
+                  <span style={{color:C.white}}>DEVCON </span>
                   <span style={{color:C.skyBlue,fontStyle:"italic"}}>{"Marketing\nAgent"}</span>
                 </h1>
               </div>
@@ -432,7 +432,7 @@ export default function App() {
                     </div>
                   )}
                   <div style={{
-                    maxWidth:"min(76%,640px)", borderRadius:12,padding:"11px 15px",fontSize:13,lineHeight:1.72,wordBreak:"break-word",
+                    maxWidth:"min(76%,640px)",padding:"11px 15px",fontSize:13,lineHeight:1.72,wordBreak:"break-word",
                     ...(m.role==="user"
                       ? {background:C.navy,border:`1px solid ${C.brightBlue}33`,borderRadius:"12px 12px 4px 12px",color:"#d8e8ff"}
                       : {background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",color:"#c0d4ee"})
