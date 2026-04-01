@@ -2,181 +2,179 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 
-// ── DEVCON 4-circle logo ──────────────────────────────────────────────
+// ── DEVCON palette from 16yr poster ─────────────────────────────────
+const C = {
+  skyBlue:   "#4DC8E8",
+  brightBlue:"#2B7DE9",
+  coral:     "#E8574A",
+  purple:    "#8B4FD8",
+  gold:      "#F5C842",
+  teal:      "#1BA8A0",
+  navy:      "#1A2A4A",
+  navyDark:  "#111B2E",
+  navyDeep:  "#0C1220",
+  white:     "#F0F4FF",
+  muted:     "#7A92B8",
+  border:    "#1E2E48",
+  cardBg:    "#141E30",
+  inputBg:   "#0F1828",
+};
+
+// ── 4-circle logo ────────────────────────────────────────────────────
 function DevconCircles({ size = 28 }: { size?: number }) {
-  const r = size * 0.22;
-  const cx = size / 2, cy = size / 2, off = size * 0.15;
+  const r = size * 0.23, cx = size / 2, cy = size / 2, off = size * 0.165;
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-      <circle cx={cx - off} cy={cy - off} r={r} fill="#f5a623" />
-      <circle cx={cx + off} cy={cy - off} r={r} fill="#e94560" />
-      <circle cx={cx - off} cy={cy + off} r={r} fill="#7c3aed" />
-      <circle cx={cx + off} cy={cy + off} r={r} fill="#4caf50" />
+      <circle cx={cx-off} cy={cy-off} r={r} fill={C.gold}      />
+      <circle cx={cx+off} cy={cy-off} r={r} fill={C.coral}     />
+      <circle cx={cx-off} cy={cy+off} r={r} fill={C.purple}    />
+      <circle cx={cx+off} cy={cy+off} r={r} fill={C.skyBlue}   />
     </svg>
   );
 }
 
 // ── Loading screen ───────────────────────────────────────────────────
 function LoadingScreen({ onDone }: { onDone: () => void }) {
-  const [phase, setPhase] = useState(0); // 0=one circle, 1=splitting, 2=four circles, 3=fade
+  const [phase, setPhase] = useState(0);
   useEffect(() => {
-    const t1 = setTimeout(() => setPhase(1), 700);
-    const t2 = setTimeout(() => setPhase(2), 1400);
-    const t3 = setTimeout(() => setPhase(3), 2200);
-    const t4 = setTimeout(() => onDone(), 2800);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    const t1 = setTimeout(() => setPhase(1), 600);
+    const t2 = setTimeout(() => setPhase(2), 1300);
+    const t3 = setTimeout(() => setPhase(3), 2100);
+    const t4 = setTimeout(() => onDone(),    2700);
+    return () => [t1,t2,t3,t4].forEach(clearTimeout);
   }, [onDone]);
 
-  const size = 120;
-  const r = 18, cx = size / 2, cy = size / 2, off = 22;
+  const sz = 100, r = 15, cx = sz/2, cy = sz/2, off = 19;
   const circles = [
-    { cx: cx - off, cy: cy - off, fill: "#f5a623" },
-    { cx: cx + off, cy: cy - off, fill: "#e94560" },
-    { cx: cx - off, cy: cy + off, fill: "#7c3aed" },
-    { cx: cx + off, cy: cy + off, fill: "#4caf50" },
+    { cx: cx-off, cy: cy-off, fill: C.gold   },
+    { cx: cx+off, cy: cy-off, fill: C.coral  },
+    { cx: cx-off, cy: cy+off, fill: C.purple },
+    { cx: cx+off, cy: cy+off, fill: C.skyBlue},
   ];
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, background: "#0e0e11", zIndex: 999,
-      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      gap: 28, opacity: phase === 3 ? 0 : 1, transition: "opacity .6s ease",
-    }}>
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
-        {phase === 0 && (
-          <circle cx={cx} cy={cy} r={r} fill="#fff"
-            style={{ transition: "all .5s ease" }} />
-        )}
-        {phase >= 1 && circles.map((c, i) => (
-          <circle key={i} cx={phase >= 2 ? c.cx : cx} cy={phase >= 2 ? c.cy : cy}
-            r={r} fill={phase >= 2 ? c.fill : "#fff"}
-            style={{ transition: `cx .6s ease ${i * 0.06}s, cy .6s ease ${i * 0.06}s, fill .4s ease ${i * 0.08}s` }}
+    <div style={{ position:"fixed", inset:0, background:C.navyDeep, zIndex:999,
+      display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+      gap:24, opacity:phase===3?0:1, transition:"opacity .6s ease" }}>
+      <svg width={sz} height={sz} viewBox={`0 0 ${sz} ${sz}`} style={{overflow:"visible"}}>
+        {phase===0 && <circle cx={cx} cy={cy} r={r} fill={C.white}/>}
+        {phase>=1 && circles.map((c,i)=>(
+          <circle key={i}
+            cx={phase>=2 ? c.cx : cx}
+            cy={phase>=2 ? c.cy : cy}
+            r={r} fill={phase>=2 ? c.fill : C.white}
+            style={{ transition:`cx .55s cubic-bezier(.34,1.56,.64,1) ${i*.07}s, cy .55s cubic-bezier(.34,1.56,.64,1) ${i*.07}s, fill .35s ease ${i*.08}s` }}
           />
         ))}
       </svg>
-      <div style={{ fontFamily: "'Proxima Nova','Montserrat',sans-serif", fontWeight: 700, fontSize: 22, letterSpacing: 4, color: "#fff", opacity: phase >= 2 ? 1 : 0, transition: "opacity .5s ease" }}>
-        DEVCON
-      </div>
-      <div style={{ fontSize: 12, color: "#555", letterSpacing: 2, opacity: phase >= 2 ? 1 : 0, transition: "opacity .6s .2s ease" }}>
-        MARKETING AGENT
+      <div style={{ opacity:phase>=2?1:0, transition:"opacity .5s ease", textAlign:"center" }}>
+        <div style={{ fontWeight:900, fontSize:26, letterSpacing:6, color:C.white }}>DEVCON STUDIOS</div>
+        <div style={{ fontSize:11, color:C.muted, letterSpacing:3, marginTop:4 }}>MARKETING AGENT</div>
       </div>
     </div>
   );
 }
 
-// ── Markdown renderer ─────────────────────────────────────────────────
-function renderMarkdown(text: string): React.ReactNode[] {
+// ── Markdown renderer ────────────────────────────────────────────────
+function MD({ text }: { text: string }) {
   const lines = text.split("\n");
   const nodes: React.ReactNode[] = [];
   let i = 0;
 
-  const inlineFormat = (s: string, key: string | number): React.ReactNode => {
-    const parts = s.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|__[^_]+__)/g);
-    return (
-      <span key={key}>
-        {parts.map((p, j) => {
-          if (/^\*\*/.test(p) || /^__/.test(p)) return <strong key={j}>{p.slice(2, -2)}</strong>;
-          if (/^\*/.test(p)) return <em key={j}>{p.slice(1, -1)}</em>;
-          if (/^`/.test(p)) return <code key={j} style={{ background: "#1e1e2e", padding: "1px 5px", borderRadius: 4, fontSize: "0.88em", fontFamily: "monospace" }}>{p.slice(1, -1)}</code>;
-          return p;
-        })}
-      </span>
-    );
+  const inline = (s: string, k: string|number): React.ReactNode => {
+    const parts = s.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+    return <span key={k}>{parts.map((p,j) => {
+      if (/^\*\*/.test(p)) return <strong key={j} style={{color:C.white,fontWeight:700}}>{p.slice(2,-2)}</strong>;
+      if (/^\*/.test(p))   return <em key={j} style={{color:C.skyBlue}}>{p.slice(1,-1)}</em>;
+      if (/^`/.test(p))    return <code key={j} style={{background:C.navyDark,padding:"1px 5px",borderRadius:4,fontSize:"0.87em",fontFamily:"monospace",color:C.gold}}>{p.slice(1,-1)}</code>;
+      return p;
+    })}</span>;
   };
 
   while (i < lines.length) {
-    const line = lines[i];
-    if (/^### /.test(line)) {
-      nodes.push(<h3 key={i} style={{ margin: "14px 0 4px", fontSize: 14, fontWeight: 700, color: "#e0e0f0", letterSpacing: .3 }}>{inlineFormat(line.slice(4), i)}</h3>);
-    } else if (/^## /.test(line)) {
-      nodes.push(<h2 key={i} style={{ margin: "16px 0 6px", fontSize: 16, fontWeight: 700, color: "#fff" }}>{inlineFormat(line.slice(3), i)}</h2>);
-    } else if (/^# /.test(line)) {
-      nodes.push(<h1 key={i} style={{ margin: "16px 0 8px", fontSize: 18, fontWeight: 800, color: "#fff" }}>{inlineFormat(line.slice(2), i)}</h1>);
-    } else if (/^---+$/.test(line.trim())) {
-      nodes.push(<hr key={i} style={{ border: "none", borderTop: "1px solid #2a2a3a", margin: "12px 0" }} />);
-    } else if (/^[*\-] /.test(line)) {
+    const l = lines[i];
+    if      (/^### /.test(l)) nodes.push(<h3 key={i} style={{margin:"12px 0 4px",fontSize:13,fontWeight:700,color:C.skyBlue,letterSpacing:.5}}>{inline(l.slice(4),i)}</h3>);
+    else if (/^## /.test(l))  nodes.push(<h2 key={i} style={{margin:"14px 0 6px",fontSize:15,fontWeight:800,color:C.white,borderBottom:`1px solid ${C.border}`,paddingBottom:4}}>{inline(l.slice(3),i)}</h2>);
+    else if (/^# /.test(l))   nodes.push(<h1 key={i} style={{margin:"16px 0 8px",fontSize:17,fontWeight:900,color:C.white}}>{inline(l.slice(2),i)}</h1>);
+    else if (/^---+$/.test(l.trim())) nodes.push(<hr key={i} style={{border:"none",borderTop:`1px solid ${C.border}`,margin:"10px 0"}}/>);
+    else if (/^[*\-] /.test(l)) {
       const items: React.ReactNode[] = [];
       while (i < lines.length && /^[*\-] /.test(lines[i])) {
-        items.push(<li key={i} style={{ marginBottom: 4 }}>{inlineFormat(lines[i].slice(2), i)}</li>);
+        items.push(<li key={i} style={{marginBottom:3,paddingLeft:4}}>{inline(lines[i].slice(2),i)}</li>);
         i++;
       }
-      nodes.push(<ul key={`ul${i}`} style={{ paddingLeft: 20, margin: "6px 0" }}>{items}</ul>);
+      nodes.push(<ul key={`ul${i}`} style={{paddingLeft:18,margin:"6px 0",listStyleType:"'›  '"}}>{items}</ul>);
       continue;
-    } else if (/^\d+\. /.test(line)) {
+    } else if (/^\d+\. /.test(l)) {
       const items: React.ReactNode[] = [];
       while (i < lines.length && /^\d+\. /.test(lines[i])) {
-        items.push(<li key={i} style={{ marginBottom: 4 }}>{inlineFormat(lines[i].replace(/^\d+\. /, ""), i)}</li>);
+        items.push(<li key={i} style={{marginBottom:3}}>{inline(lines[i].replace(/^\d+\. /,""),i)}</li>);
         i++;
       }
-      nodes.push(<ol key={`ol${i}`} style={{ paddingLeft: 20, margin: "6px 0" }}>{items}</ol>);
+      nodes.push(<ol key={`ol${i}`} style={{paddingLeft:20,margin:"6px 0"}}>{items}</ol>);
       continue;
-    } else if (line.trim() === "") {
-      nodes.push(<div key={i} style={{ height: 8 }} />);
-    } else {
-      nodes.push(<p key={i} style={{ margin: "3px 0", lineHeight: 1.7 }}>{inlineFormat(line, i)}</p>);
-    }
+    } else if (l.trim()==="") nodes.push(<div key={i} style={{height:6}}/>);
+    else nodes.push(<p key={i} style={{margin:"2px 0",lineHeight:1.72}}>{inline(l,i)}</p>);
     i++;
   }
-  return nodes;
+  return <div>{nodes}</div>;
 }
 
-// ── Brand + config ───────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are the DEVCON Philippines Marketing AI Agent — an expert social media strategist embedded inside the DEVCON national office workflow.
+// ── Config ───────────────────────────────────────────────────────────
+const SYSTEM_PROMPT = `You are the DEVCON Philippines Marketing AI Agent — an expert social media strategist for DEVCON Philippines' national office.
 BRAND: Mission: "Tech-Empowered Philippines For All" | Voice: Pioneering. Open. Collaborative. Impactful.
 Programs: DEVCON Kids, Campus DEVCON, SheIsDEVCON, DEVCON Summit, Smart Contracts Code Camp, AI Academy, DEVCON CREST, Jumpstart Internships
 Chapters: Manila, Laguna, Pampanga, Legazpi, Cebu, Iloilo, Bohol, Bacolod, Davao, Iligan, CDO, Bukidnon
 AUDIENCE: Filipino IT students, dev professionals, educators, women in tech, kids programs.
 TONE: Energetic but grounded. Community-proud. Tech-forward but human. Never corporate.
-FORMAT: Always use markdown. Use **bold** for platform names, key actions, and important phrases. Use ## for section headers. Use bullet lists for multi-item content. Use numbered lists for steps.
+FORMAT RULES: Always respond using proper markdown. Use **bold** for platform names, CTAs, and key info. Use ## for major sections. Use ### for subsections. Use bullet lists (-) for options. Use numbered lists for steps. Use --- to separate platform versions.
 PLATFORMS: Facebook (community, Taglish OK) | Instagram (visual, reels, carousels) | TikTok (punchy, Gen Z, 15-60s scripts) | LinkedIn (professional, formal English) | Buffer (PHT scheduling)
-RULES: 1) Reflect: Pioneering, Open, Collaborative, Impactful. 2) Hashtags: #DEVCON #DEVCONph #TechEmpoweredPhilippines #GeeksUnite 3) Intern briefs: objective, platform, format, draft copy, visual notes. 4) Buffer plans: day + PHT time + platform + copy + visual note. 5) Chapter posts: national message + local flavor. 6) Flag Code of Conduct or Child Protection Policy conflicts.`;
+CONTENT RULES: 1) Always reflect: Pioneering, Open, Collaborative, Impactful. 2) Use hashtags: #DEVCON #DEVCONph #TechEmpoweredPhilippines #GeeksUnite 3) Intern briefs: include objective, platform, format, draft, visual notes. 4) Buffer plans: day + PHT time + platform + copy + visual note. 5) Chapter posts: national message + local flavor. 6) Flag any Code of Conduct or Child Protection Policy concerns.`;
 
 const MODES = [
-  { id:"content_gen",  label:"Generate Content",   icon:"✦" },
-  { id:"repurpose",    label:"Repurpose Content",   icon:"⟳" },
-  { id:"chapter_post", label:"Chapter Post",        icon:"◈" },
-  { id:"intern_brief", label:"Intern Brief",        icon:"◉" },
-  { id:"buffer_plan",  label:"Buffer Schedule",     icon:"◎" },
-  { id:"strategy",     label:"Strategy Alignment",  icon:"△" },
+  {id:"content_gen",  label:"Generate Content",  icon:"✦"},
+  {id:"repurpose",    label:"Repurpose Content",  icon:"⟳"},
+  {id:"chapter_post", label:"Chapter Post",       icon:"◈"},
+  {id:"intern_brief", label:"Intern Brief",       icon:"◉"},
+  {id:"buffer_plan",  label:"Buffer Schedule",    icon:"◎"},
+  {id:"strategy",     label:"Strategy Alignment", icon:"△"},
 ];
-
 const CHANNELS = [
-  { id:"fb_main",    label:"Facebook DEVCON PH",     icon:"▣" },
-  { id:"fb_studios", label:"Facebook DEVCON Studios", icon:"▣" },
-  { id:"instagram",  label:"Instagram",               icon:"◷" },
-  { id:"tiktok",     label:"TikTok",                  icon:"▷" },
-  { id:"linkedin",   label:"LinkedIn",                icon:"▦" },
-  { id:"buffer",     label:"Buffer",                  icon:"◈" },
+  {id:"fb_main",    label:"Facebook DEVCON PH",     icon:"▣"},
+  {id:"fb_studios", label:"Facebook DEVCON Studios", icon:"▣"},
+  {id:"instagram",  label:"Instagram",               icon:"◷"},
+  {id:"tiktok",     label:"TikTok",                  icon:"▷"},
+  {id:"linkedin",   label:"LinkedIn",                icon:"▦"},
+  {id:"buffer",     label:"Buffer",                  icon:"◈"},
 ];
-
 const CHAPTERS = ["Manila","Laguna","Pampanga","Legazpi","Cebu","Iloilo","Bohol","Bacolod","Davao","Iligan","CDO","Bukidnon"];
-
 const STARTERS = [
-  { icon:"◷", text:"Generate 5 Instagram posts for SheIsDEVCON 2026" },
-  { icon:"◈", text:"Create a Buffer weekly schedule for the Cebu chapter" },
-  { icon:"◉", text:"Write an intern content brief for our TikTok series on campus events" },
-  { icon:"⟳", text:"Repurpose our DEVCON Summit recap for LinkedIn and TikTok" },
-  { icon:"▣", text:"Draft a Facebook post announcing the AI Academy scholarship" },
+  {icon:"◷", text:"Generate 5 Instagram posts for SheIsDEVCON 2026"},
+  {icon:"◈", text:"Create a Buffer weekly schedule for the Cebu chapter"},
+  {icon:"◉", text:"Write an intern brief for our TikTok campus events series"},
+  {icon:"⟳", text:"Repurpose our DEVCON Summit recap for LinkedIn and TikTok"},
+  {icon:"▣", text:"Draft a Facebook post for the AI Academy scholarship"},
 ];
 
-type Msg = { role:"user"|"assistant"; text:string };
-type HistItem = { role:"user"|"assistant"; content:string };
-type HistoryEntry = { id:string; user_message:string; assistant_message:string; created_at:string };
+type Msg  = {role:"user"|"assistant"; text:string};
+type HI   = {role:"user"|"assistant"; content:string};
+type HEntry = {id:string; user_message:string; assistant_message:string; created_at:string};
 
 export default function App() {
-  const [loaded,   setLoaded]   = useState(false);
-  const [mode,     setMode]     = useState<string|null>(null);
-  const [channels, setChannels] = useState<string[]>([]);
-  const [chapter,  setChapter]  = useState("");
-  const [input,    setInput]    = useState("");
-  const [msgs,     setMsgs]     = useState<Msg[]>([]);
-  const [hist,     setHist]     = useState<HistItem[]>([]);
-  const [loading,  setLoading]  = useState(false);
-  const [remaining, setRemaining] = useState<number|null>(null);
-  const [showHistory, setShowHistory] = useState(false);
-  const [history,  setHistory]  = useState<HistoryEntry[]>([]);
+  const [loaded,      setLoaded]      = useState(false);
+  const [sideOpen,    setSideOpen]    = useState(false);   // mobile sidebar
+  const [histOpen,    setHistOpen]    = useState(false);
+  const [mode,        setMode]        = useState<string|null>(null);
+  const [channels,    setChannels]    = useState<string[]>([]);
+  const [chapter,     setChapter]     = useState("");
+  const [input,       setInput]       = useState("");
+  const [msgs,        setMsgs]        = useState<Msg[]>([]);
+  const [hist,        setHist]        = useState<HI[]>([]);
+  const [loading,     setLoading]     = useState(false);
+  const [remaining,   setRemaining]   = useState<number|null>(null);
+  const [history,     setHistory]     = useState<HEntry[]>([]);
   const [histLoading, setHistLoading] = useState(false);
-  const [sessionId] = useState(() => Math.random().toString(36).slice(2));
+  const [sessionId]  = useState(() => Math.random().toString(36).slice(2));
   const abortRef = useRef<AbortController|null>(null);
   const chatRef  = useRef<HTMLDivElement>(null);
 
@@ -187,45 +185,54 @@ export default function App() {
     if (chatRef.current) chatRef.current.scrollTop = chatRef.current.scrollHeight;
   }, [msgs, loading]);
 
+  // close sidebar on outside click (mobile)
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (sideOpen && !t.closest("[data-sidebar]") && !t.closest("[data-menu-btn]"))
+        setSideOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [sideOpen]);
+
   const loadHistory = useCallback(async () => {
     setHistLoading(true);
     try {
-      const res = await fetch(`/api/history?sessionId=${sessionId}`);
+      const res  = await fetch("/api/history");
       const data = await res.json();
-      if (Array.isArray(data)) setHistory(data);
-    } catch {}
+      setHistory(Array.isArray(data) ? data : []);
+    } catch { setHistory([]); }
     setHistLoading(false);
-  }, [sessionId]);
+  }, []);
 
-  const toggleHistory = () => {
-    if (!showHistory) loadHistory();
-    setShowHistory(p => !p);
-  };
+  const openHistory = () => { setHistOpen(true); loadHistory(); };
 
   const toggleCh = (id:string) =>
     setChannels(p => p.includes(id) ? p.filter(c=>c!==id) : [...p,id]);
 
   const buildPrompt = (t:string) => {
     let c = "";
-    if (mode) { const m=MODES.find(x=>x.id===mode); c+=`MODE: ${m?.label}\n`; }
+    if (mode)          { const m=MODES.find(x=>x.id===mode);    c+=`MODE: ${m?.label}\n`; }
     if (channels.length) c+=`CHANNELS: ${CHANNELS.filter(x=>channels.includes(x.id)).map(x=>x.label).join(", ")}\n`;
-    if (chapter) c+=`CHAPTER: ${chapter}\n`;
+    if (chapter)         c+=`CHAPTER: ${chapter}\n`;
     return c+`\nREQUEST:\n${t}`;
   };
 
-  const send = async (text?:string) => {
+  const send = async (text?: string) => {
     const userText = (text||input).trim();
     if (!userText||loading) return;
     setMsgs(p=>[...p,{role:"user",text:userText}]);
     setInput("");
     setLoading(true);
+    setSideOpen(false);
 
-    const newHist:HistItem[] = [...hist,{role:"user",content:buildPrompt(userText)}];
+    const newHist: HI[] = [...hist,{role:"user",content:buildPrompt(userText)}];
     const ctrl = new AbortController();
     abortRef.current = ctrl;
 
     try {
-      const res = await fetch("/api/chat",{
+      const res  = await fetch("/api/chat",{
         method:"POST", signal:ctrl.signal,
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify({messages:newHist, system:SYSTEM_PROMPT, sessionId}),
@@ -239,10 +246,11 @@ export default function App() {
         setMsgs(p=>[...p,{role:"assistant",text:reply}]);
         const rem = res.headers.get("X-Prompts-Remaining");
         if (rem!==null) setRemaining(Number(rem));
-        await fetch("/api/history",{
+        fetch("/api/history",{
           method:"POST", headers:{"Content-Type":"application/json"},
           body:JSON.stringify({sessionId, userMsg:userText, assistantMsg:reply}),
-        }).catch(()=>{});
+        }).then(r=>{if(!r.ok) r.json().then(e=>console.error("History save failed:",e));})
+          .catch(e=>console.error("History save error:",e));
       }
     } catch(e:unknown) {
       if (e instanceof Error && e.name!=="AbortError")
@@ -254,88 +262,116 @@ export default function App() {
   const reset = () => {
     abortRef.current?.abort(); abortRef.current=null;
     setLoading(false); setMsgs([]); setHist([]);
-    setMode(null); setChannels([]); setChapter(""); setInput("");
+    setMode(null); setChannels([]); setChapter(""); setInput(""); setSideOpen(false);
   };
 
   const activeMode = MODES.find(m=>m.id===mode);
 
-  if (!loaded) return <LoadingScreen onDone={()=>setLoaded(true)} />;
+  if (!loaded) return <LoadingScreen onDone={()=>setLoaded(true)}/>;
+
+  const SidebarContent = () => (
+    <>
+      <div style={{flex:1, overflowY:"auto", overflowX:"hidden", padding:"20px 12px 12px"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:28}}>
+          <DevconCircles size={36}/>
+          <div>
+            <div style={{fontWeight:900,fontSize:13,color:C.white,letterSpacing:2}}>DEVCON STUDIOS</div>
+            <div style={{fontSize:10,color:C.muted,marginTop:1}}>Marketing Agent</div>
+          </div>
+        </div>
+
+        <div style={sLabel}>WORKFLOW MODE</div>
+        {MODES.map(m=>(
+          <button key={m.id} onClick={()=>setMode(mode===m.id?null:m.id)}
+            style={{...sBtn,...(mode===m.id?sBtnA:{})}}>
+            <span style={sBtnIcon}>{m.icon}</span>{m.label}
+          </button>
+        ))}
+
+        <div style={{...sLabel,marginTop:20}}>CHANNEL</div>
+        {CHANNELS.map(c=>(
+          <button key={c.id} onClick={()=>toggleCh(c.id)}
+            style={{...sBtn,...(channels.includes(c.id)?sBtnA:{})}}>
+            <span style={sBtnIcon}>{c.icon}</span>{c.label}
+          </button>
+        ))}
+
+        <div style={{...sLabel,marginTop:20}}>CHAPTER</div>
+        <select value={chapter} onChange={e=>setChapter(e.target.value)}
+          style={{width:"100%",background:C.inputBg,border:`1px solid ${C.border}`,color:C.muted,borderRadius:7,padding:"7px 10px",fontSize:12,cursor:"pointer"}}>
+          <option value="">National</option>
+          {CHAPTERS.map(c=><option key={c} value={c}>{c}</option>)}
+        </select>
+      </div>
+
+      <div style={{padding:"12px",borderTop:`1px solid ${C.border}`,flexShrink:0}}>
+        <button onClick={openHistory}
+          style={{...sBtn,...(histOpen?sBtnA:{}),marginBottom:6}}>
+          <span style={sBtnIcon}>◑</span>Prompt History
+        </button>
+        {remaining!==null&&(
+          <div style={{fontSize:10,fontWeight:600,borderRadius:20,padding:"3px 10px",marginBottom:6,display:"inline-flex",
+            background:remaining<=1?"#3a1010":remaining<=2?"#2a1e08":"#0a1e14",
+            color:remaining<=1?C.coral:remaining<=2?C.gold:C.teal}}>
+            {remaining}/5 prompts left today
+          </div>
+        )}
+        <button onClick={reset}
+          style={{width:"100%",background:C.navyDark,border:`1px solid ${C.border}`,color:C.muted,borderRadius:7,padding:"8px",cursor:"pointer",fontSize:12,marginTop:4}}>
+          ↺ Reset Session
+        </button>
+      </div>
+    </>
+  );
 
   return (
-    <div style={S.root}>
-      {/* ── SIDEBAR ── */}
-      <aside style={S.sidebar}>
-        <div style={S.sideTop}>
-          {/* Logo */}
-          <div style={S.logo}>
-            <DevconCircles size={36} />
-            <div>
-              <div style={S.logoTitle}>DEVCON</div>
-              <div style={S.logoSub}>Marketing Agent</div>
-            </div>
-          </div>
+    <div style={{display:"flex",height:"100vh",background:C.navyDeep,color:C.white,overflow:"hidden",fontFamily:"'Proxima Nova','Montserrat',system-ui,sans-serif"}}>
 
-          <div style={S.sectionLabel}>WORKFLOW MODE</div>
-          {MODES.map(m=>(
-            <button key={m.id} onClick={()=>setMode(mode===m.id?null:m.id)}
-              style={{...S.sideBtn,...(mode===m.id?S.sideBtnActive:{})}}>
-              <span style={S.sideBtnIcon}>{m.icon}</span>{m.label}
-            </button>
-          ))}
-
-          <div style={{...S.sectionLabel,marginTop:20}}>CHANNEL</div>
-          {CHANNELS.map(c=>(
-            <button key={c.id} onClick={()=>toggleCh(c.id)}
-              style={{...S.sideBtn,...(channels.includes(c.id)?S.sideBtnActive:{})}}>
-              <span style={S.sideBtnIcon}>{c.icon}</span>{c.label}
-            </button>
-          ))}
-
-          <div style={{...S.sectionLabel,marginTop:20}}>CHAPTER</div>
-          <select value={chapter} onChange={e=>setChapter(e.target.value)} style={S.select}>
-            <option value="">National</option>
-            {CHAPTERS.map(c=><option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
-
-        <div style={S.sideBottom}>
-          <button onClick={toggleHistory} style={{...S.sideBtn,...(showHistory?S.sideBtnActive:{}), marginBottom:6}}>
-            <span style={S.sideBtnIcon}>◑</span>Prompt History
-          </button>
-          {remaining!==null&&(
-            <div style={{...S.pill,
-              background:remaining<=1?"#3a1a1a":remaining<=2?"#2a2010":"#0f1a10",
-              color:remaining<=1?"#ff6b6b":remaining<=2?"#ffaa4a":"#6bcb77",
-              marginBottom:6}}>
-              {remaining}/5 prompts left today
-            </div>
-          )}
-          <button onClick={reset} style={S.resetBtn}>↺ Reset Session</button>
-        </div>
+      {/* ── DESKTOP SIDEBAR ── */}
+      <aside data-sidebar style={{width:238,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden"}}
+        className="desktop-sidebar">
+        <SidebarContent/>
       </aside>
 
+      {/* ── MOBILE SIDEBAR OVERLAY ── */}
+      {sideOpen&&(
+        <div style={{position:"fixed",inset:0,zIndex:50,display:"flex"}}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.6)",backdropFilter:"blur(2px)"}} onClick={()=>setSideOpen(false)}/>
+          <aside data-sidebar style={{position:"relative",zIndex:51,width:260,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",height:"100vh",overflowY:"auto"}}>
+            <SidebarContent/>
+          </aside>
+        </div>
+      )}
+
       {/* ── HISTORY PANEL ── */}
-      {showHistory && (
-        <div style={S.histPanel}>
-          <div style={S.histHeader}>
+      {histOpen&&(
+        <div style={{width:270,background:C.navyDark,borderRight:`1px solid ${C.border}`,display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden",
+          position:"absolute" as const,left:238,top:0,bottom:0,zIndex:40}}
+          className="history-panel">
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 14px 12px",borderBottom:`1px solid ${C.border}`}}>
             <span style={{fontWeight:700,fontSize:13}}>Prompt History</span>
-            <button onClick={()=>setShowHistory(false)} style={S.histClose}>✕</button>
+            <button onClick={()=>setHistOpen(false)} style={{background:"none",border:"none",color:C.muted,cursor:"pointer",fontSize:16}}>✕</button>
           </div>
-          <div style={S.histList}>
-            {histLoading ? (
-              <div style={{color:"#555",fontSize:12,padding:16}}>Loading...</div>
-            ) : history.length===0 ? (
-              <div style={{color:"#555",fontSize:12,padding:16}}>No history yet for this session.</div>
-            ) : [...history].reverse().map(h=>(
-              <div key={h.id} style={S.histItem} onClick={()=>{
+          <div style={{flex:1,overflowY:"auto",padding:"8px"}}>
+            {histLoading?(
+              <div style={{color:C.muted,fontSize:12,padding:16,textAlign:"center"}}>Loading...</div>
+            ):history.length===0?(
+              <div style={{color:C.muted,fontSize:12,padding:16,textAlign:"center"}}>
+                No history found.<br/>
+                <span style={{fontSize:10,color:"#3a4a6a"}}>Ensure Supabase env vars are set in Vercel.</span>
+              </div>
+            ):history.map(h=>(
+              <div key={h.id} onClick={()=>{
                 setMsgs([{role:"user",text:h.user_message},{role:"assistant",text:h.assistant_message}]);
-                setShowHistory(false);
-              }}>
-                <div style={S.histQ}>
-                  <span style={{color:"#7c3aed",marginRight:6}}>▸</span>
-                  {h.user_message.slice(0,80)}{h.user_message.length>80?"…":""}
+                setHistOpen(false);
+              }} style={{padding:"10px",borderRadius:8,cursor:"pointer",marginBottom:4,border:`1px solid ${C.border}`,background:C.navyDeep,transition:"border-color .15s"}}>
+                <div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.5}}>
+                  <span style={{color:C.skyBlue,marginRight:6}}>▸</span>
+                  {h.user_message.slice(0,72)}{h.user_message.length>72?"…":""}
                 </div>
-                <div style={S.histMeta}>{new Date(h.created_at).toLocaleString("en-PH",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}</div>
+                <div style={{fontSize:10,color:"#3a4a6a",marginTop:4}}>
+                  {new Date(h.created_at).toLocaleString("en-PH",{month:"short",day:"numeric",hour:"2-digit",minute:"2-digit"})}
+                </div>
               </div>
             ))}
           </div>
@@ -343,50 +379,75 @@ export default function App() {
       )}
 
       {/* ── MAIN ── */}
-      <main style={S.main}>
-        <div ref={chatRef} style={S.chatArea}>
-          {msgs.length===0 ? (
-            <div style={S.empty}>
-              <div style={S.emptyBadge}>· AI POWERED STRATEGIC ENGINE ·</div>
-              <div style={S.emptyLogoWrap}>
-                <DevconCircles size={64} />
-                <h1 style={S.emptyTitle}>
-                  <span style={S.emptyBold}>DEVCON </span>
-                  <span style={S.emptyItalic}>Marketing{"\n"}Agent</span>
+      <main style={{flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0}}>
+
+        {/* Mobile topbar */}
+        <div style={{display:"none",padding:"10px 14px",background:C.navyDark,borderBottom:`1px solid ${C.border}`,alignItems:"center",gap:12,flexShrink:0}} className="mobile-topbar">
+          <button data-menu-btn onClick={()=>setSideOpen(p=>!p)}
+            style={{background:"none",border:"none",color:C.white,fontSize:22,cursor:"pointer",lineHeight:1,padding:"2px 4px"}}>☰</button>
+          <DevconCircles size={24}/>
+          <span style={{fontWeight:800,fontSize:13,letterSpacing:2}}>DEVCON STUDIOS</span>
+          {remaining!==null&&(
+            <span style={{marginLeft:"auto",fontSize:10,color:remaining<=1?C.coral:remaining<=2?C.gold:C.teal}}>
+              {remaining}/5 left
+            </span>
+          )}
+        </div>
+
+        {/* Chat area */}
+        <div ref={chatRef} style={{flex:1,overflowY:"auto",padding:"0 0 8px"}}>
+          {msgs.length===0?(
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100%",padding:"32px 20px",textAlign:"center"}}>
+              <div style={{fontSize:10,letterSpacing:3,color:C.muted,border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 14px",marginBottom:24}}>
+                · AI POWERED STRATEGIC ENGINE ·
+              </div>
+              <div style={{display:"flex",alignItems:"center",gap:16,marginBottom:16,flexWrap:"wrap",justifyContent:"center"}}>
+                <DevconCircles size={56}/>
+                <h1 style={{fontSize:"clamp(32px,6vw,68px)",fontWeight:900,lineHeight:1.05,textAlign:"left"}}>
+                  <span style={{color:C.white}}>DEVCON STUDIOS</span>
+                  <span style={{color:C.skyBlue,fontStyle:"italic"}}>{"Marketing\nAgent"}</span>
                 </h1>
               </div>
-              <p style={S.emptyDesc}>
+              <p style={{color:C.muted,fontSize:14,lineHeight:1.7,marginBottom:28,maxWidth:540}}>
                 Your intelligent workspace for engineering National and Chapter content.<br/>
                 Select a workflow mode to begin generating high-impact marketing materials.
               </p>
-              <div style={S.cards}>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:10,width:"100%",maxWidth:820}}>
                 {STARTERS.map((c,i)=>(
-                  <button key={i} onClick={()=>send(c.text)} style={S.card}>
-                    <span style={S.cardIcon}>{c.icon}</span>
-                    <span style={S.cardText}>{c.text}</span>
+                  <button key={i} onClick={()=>send(c.text)}
+                    style={{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:12,padding:"16px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:12,transition:"border-color .15s"}}>
+                    <span style={{fontSize:16,color:C.brightBlue,flexShrink:0,marginTop:2}}>{c.icon}</span>
+                    <span style={{color:"#b0c4e0",fontSize:13,lineHeight:1.5}}>{c.text}</span>
                   </button>
                 ))}
               </div>
             </div>
-          ) : (
-            <div style={S.msgList}>
+          ):(
+            <div style={{display:"flex",flexDirection:"column",gap:16,padding:"20px 16px 8px"}}>
               {msgs.map((m,i)=>(
-                <div key={i} style={{...S.msgRow,justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start",alignItems:"flex-start",gap:8}}>
                   {m.role==="assistant"&&(
-                    <div style={S.avatar}><DevconCircles size={22}/></div>
+                    <div style={{width:30,height:30,borderRadius:8,background:C.navyDark,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <DevconCircles size={20}/>
+                    </div>
                   )}
-                  <div style={{...S.bubble,...(m.role==="user"?S.bubbleUser:S.bubbleAI)}}>
-                    {m.role==="assistant" ? renderMarkdown(m.text) : m.text}
+                  <div style={{
+                    maxWidth:"min(76%,640px)", borderRadius:12,padding:"11px 15px",fontSize:13,lineHeight:1.72,wordBreak:"break-word",
+                    ...(m.role==="user"
+                      ? {background:C.navy,border:`1px solid ${C.brightBlue}33`,borderRadius:"12px 12px 4px 12px",color:"#d8e8ff"}
+                      : {background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",color:"#c0d4ee"})
+                  }}>
+                    {m.role==="assistant" ? <MD text={m.text}/> : m.text}
                   </div>
                 </div>
               ))}
               {loading&&(
-                <div style={{...S.msgRow,justifyContent:"flex-start"}}>
-                  <div style={S.avatar}><DevconCircles size={22}/></div>
-                  <div style={{...S.bubble,...S.bubbleAI,...S.bubbleLoading}}>
-                    {[0,1,2].map(i=>(
-                      <span key={i} style={{...S.dot,animationDelay:`${i*.2}s`}}/>
-                    ))}
+                <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
+                  <div style={{width:30,height:30,borderRadius:8,background:C.navyDark,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    <DevconCircles size={20}/>
+                  </div>
+                  <div style={{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",padding:"14px 18px",display:"flex",gap:6,alignItems:"center"}}>
+                    {[0,1,2].map(i=><span key={i} style={{width:7,height:7,borderRadius:"50%",background:C.brightBlue,display:"inline-block",animation:"blink 1.2s infinite",animationDelay:`${i*.2}s`}}/>)}
                   </div>
                 </div>
               )}
@@ -394,26 +455,26 @@ export default function App() {
           )}
         </div>
 
-        {/* Input */}
-        <div style={S.inputWrap}>
+        {/* Input bar */}
+        <div style={{padding:"10px 14px 12px",background:C.navyDark,borderTop:`1px solid ${C.border}`,flexShrink:0}}>
           {(mode||channels.length||chapter)&&(
-            <div style={S.tags}>
-              {mode&&<span style={S.tag}>{activeMode?.icon} {activeMode?.label}</span>}
-              {channels.map(id=>{const c=CHANNELS.find(x=>x.id===id);return<span key={id} style={{...S.tag,...S.tagGreen}}>{c?.icon} {c?.label}</span>;})}
-              {chapter&&<span style={{...S.tag,...S.tagOrange}}>◈ {chapter}</span>}
+            <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+              {mode&&<span style={{...tag,background:`${C.purple}22`,border:`1px solid ${C.purple}55`,color:C.skyBlue}}>{activeMode?.icon} {activeMode?.label}</span>}
+              {channels.map(id=>{const c=CHANNELS.find(x=>x.id===id);return<span key={id} style={{...tag,background:`${C.teal}18`,border:`1px solid ${C.teal}44`,color:C.teal}}>{c?.icon} {c?.label}</span>;})}
+              {chapter&&<span style={{...tag,background:`${C.gold}18`,border:`1px solid ${C.gold}44`,color:C.gold}}>◈ {chapter}</span>}
             </div>
           )}
-          <div style={S.inputRow}>
+          <div style={{display:"flex",gap:8,background:C.inputBg,border:`1px solid ${wc>MAX_WORDS?C.coral:C.border}`,borderRadius:14,padding:"8px 8px 8px 14px",alignItems:"flex-end",transition:"border-color .2s"}}>
             <textarea value={input} onChange={e=>setInput(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
               placeholder="Engineer your next strategy..."
-              style={{...S.textarea,borderColor:wc>MAX_WORDS?"#e94560":"transparent"}}
-            />
-            <button onClick={()=>send()} disabled={loading||!input.trim()||wc>MAX_WORDS} style={S.sendBtn}>▶</button>
+              style={{flex:1,background:"transparent",border:"none",color:C.white,fontSize:13,resize:"none",height:50,lineHeight:1.6,paddingTop:4,fontFamily:"inherit"}}/>
+            <button onClick={()=>send()} disabled={loading||!input.trim()||wc>MAX_WORDS}
+              style={{background:loading||!input.trim()||wc>MAX_WORDS?C.navyDeep:`linear-gradient(135deg,${C.brightBlue},${C.purple})`,border:"none",color:C.white,borderRadius:10,width:38,height:38,cursor:loading||!input.trim()||wc>MAX_WORDS?"not-allowed":"pointer",fontSize:14,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",transition:"background .2s"}}>▶</button>
           </div>
-          <div style={S.inputMeta}>
-            <span style={S.metaHint}>Shift+Enter for new line · Brand guidelines auto-applied</span>
-            <span style={{color:wc>MAX_WORDS?"#e94560":wc>160?"#ffaa4a":"#444",fontSize:11}}>{wc}/{MAX_WORDS}w</span>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6,paddingLeft:2}}>
+            <span style={{fontSize:10,color:"#2a3a5a"}}>Shift+Enter for new line · Brand guidelines auto-applied</span>
+            <span style={{fontSize:11,color:wc>MAX_WORDS?C.coral:wc>160?C.gold:"#2a3a5a"}}>{wc}/{MAX_WORDS}w</span>
           </div>
         </div>
       </main>
@@ -423,69 +484,28 @@ export default function App() {
         @keyframes blink{0%,80%,100%{opacity:.15}40%{opacity:1}}
         *{box-sizing:border-box;font-family:'Proxima Nova','Montserrat',system-ui,sans-serif}
         textarea:focus{outline:none!important}
-        button:hover{opacity:.82}
+        button:hover{opacity:.85}
         select:focus{outline:none}
         ::-webkit-scrollbar{width:5px}
         ::-webkit-scrollbar-track{background:transparent}
-        ::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}
+        ::-webkit-scrollbar-thumb{background:${C.border};border-radius:3px}
+        ::-webkit-scrollbar-thumb:hover{background:${C.navy}}
+        @media(max-width:768px){
+          .desktop-sidebar{display:none!important}
+          .mobile-topbar{display:flex!important}
+          .history-panel{left:0!important;width:100vw!important;z-index:45!important}
+        }
+        @media(max-width:480px){
+          .history-panel{width:100vw!important}
+        }
       `}</style>
     </div>
   );
 }
 
-const S: Record<string,React.CSSProperties> = {
-  root:       {display:"flex",height:"100vh",background:"#0e0e11",color:"#e0e0e8",overflow:"hidden"},
-  sidebar:    {width:238,background:"#0a0a0d",borderRight:"1px solid #1c1c22",display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden"},
-  sideTop:    {flex:1,overflowY:"auto",overflowX:"hidden",padding:"20px 12px 12px"},
-  sideBottom: {padding:"12px",borderTop:"1px solid #1c1c22",flexShrink:0},
-  logo:       {display:"flex",alignItems:"center",gap:10,marginBottom:28},
-  logoTitle:  {fontWeight:800,fontSize:13,color:"#fff",letterSpacing:2},
-  logoSub:    {fontSize:10,color:"#555",marginTop:1},
-  sectionLabel:{fontSize:9,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:6,paddingLeft:8},
-  sideBtn:    {width:"100%",display:"flex",alignItems:"center",gap:8,background:"transparent",border:"none",color:"#666",padding:"7px 8px",borderRadius:7,cursor:"pointer",fontSize:12,textAlign:"left"},
-  sideBtnActive:{background:"#1a1a22",color:"#e0e0f0",borderLeft:"2px solid #7c3aed"},
-  sideBtnIcon:{fontSize:12,width:16,textAlign:"center",flexShrink:0},
-  select:     {width:"100%",background:"#13131a",border:"1px solid #2a2a35",color:"#999",borderRadius:7,padding:"7px 10px",fontSize:12,cursor:"pointer"},
-  resetBtn:   {width:"100%",background:"#1a1a22",border:"1px solid #2a2a35",color:"#666",borderRadius:7,padding:"8px",cursor:"pointer",fontSize:12,marginTop:4},
-  pill:       {display:"inline-flex",alignItems:"center",background:"#1a1a22",color:"#666",borderRadius:20,padding:"3px 10px",fontSize:10,fontWeight:600},
-  // History panel
-  histPanel:  {width:280,background:"#0c0c10",borderRight:"1px solid #1c1c22",display:"flex",flexDirection:"column",flexShrink:0,overflow:"hidden"},
-  histHeader: {display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 14px 12px",borderBottom:"1px solid #1c1c22"},
-  histClose:  {background:"none",border:"none",color:"#555",cursor:"pointer",fontSize:14,padding:4},
-  histList:   {flex:1,overflowY:"auto",padding:"8px"},
-  histItem:   {padding:"10px 10px",borderRadius:8,cursor:"pointer",marginBottom:4,border:"1px solid #1c1c22",background:"#0e0e12"},
-  histQ:      {fontSize:12,color:"#bbb",lineHeight:1.5},
-  histMeta:   {fontSize:10,color:"#444",marginTop:4},
-  // Main
-  main:       {flex:1,display:"flex",flexDirection:"column",overflow:"hidden",minWidth:0},
-  chatArea:   {flex:1,overflowY:"auto",padding:"0 0 8px"},
-  empty:      {display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100%",padding:"40px 24px",textAlign:"center"},
-  emptyBadge: {fontSize:10,letterSpacing:3,color:"#555",border:"1px solid #2a2a35",borderRadius:20,padding:"4px 14px",marginBottom:28},
-  emptyLogoWrap:{display:"flex",alignItems:"center",gap:20,marginBottom:20},
-  emptyTitle: {fontSize:"clamp(36px,5vw,70px)",fontWeight:900,lineHeight:1.05,whiteSpace:"pre-line",textAlign:"left"},
-  emptyBold:  {color:"#fff"},
-  emptyItalic:{color:"#fff",fontStyle:"italic"},
-  emptyDesc:  {color:"#555",fontSize:14,lineHeight:1.7,marginBottom:32,maxWidth:580},
-  cards:      {display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(240px,1fr))",gap:12,width:"100%",maxWidth:860},
-  card:       {background:"#13131a",border:"1px solid #1e1e28",borderRadius:12,padding:"18px 18px",cursor:"pointer",textAlign:"left",display:"flex",alignItems:"flex-start",gap:12},
-  cardIcon:   {fontSize:16,color:"#7c3aed",flexShrink:0,marginTop:2},
-  cardText:   {color:"#bbb",fontSize:13,lineHeight:1.5},
-  msgList:    {display:"flex",flexDirection:"column",gap:16,padding:"24px 24px 8px"},
-  msgRow:     {display:"flex",alignItems:"flex-start",gap:10},
-  avatar:     {width:30,height:30,borderRadius:8,background:"#1a1a22",border:"1px solid #2a2a3a",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},
-  bubble:     {maxWidth:"76%",borderRadius:12,padding:"12px 16px",fontSize:13,lineHeight:1.7,wordBreak:"break-word"},
-  bubbleUser: {background:"#1a1a28",border:"1px solid #2a2a3a",borderRadius:"12px 12px 4px 12px",color:"#d0d0e8"},
-  bubbleAI:   {background:"#13131a",border:"1px solid #1e1e28",borderRadius:"4px 12px 12px 12px",color:"#c8c8d8"},
-  bubbleLoading:{display:"flex",gap:6,alignItems:"center",padding:"14px 18px"},
-  dot:        {width:7,height:7,borderRadius:"50%",background:"#7c3aed",display:"inline-block",animation:"blink 1.2s infinite"},
-  inputWrap:  {padding:"12px 16px 14px",background:"#0a0a0d",borderTop:"1px solid #1c1c22",flexShrink:0},
-  tags:       {display:"flex",gap:6,flexWrap:"wrap",marginBottom:8},
-  tag:        {background:"#1a1a28",border:"1px solid #2a2a3a",color:"#9090c0",borderRadius:20,padding:"2px 10px",fontSize:11},
-  tagGreen:   {background:"#0f1a10",border:"1px solid #1a3a1a",color:"#6bcb77"},
-  tagOrange:  {background:"#1f1508",border:"1px solid #3a2a08",color:"#ffaa4a"},
-  inputRow:   {display:"flex",gap:8,background:"#13131a",border:"1px solid #1e1e28",borderRadius:14,padding:"8px 8px 8px 16px",alignItems:"flex-end"},
-  textarea:   {flex:1,background:"transparent",border:"none",color:"#e0e0e8",fontSize:13,resize:"none",height:52,lineHeight:1.6,paddingTop:6},
-  sendBtn:    {background:"linear-gradient(135deg,#7c3aed,#e94560)",border:"none",color:"#fff",borderRadius:10,width:40,height:40,cursor:"pointer",fontSize:14,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center"},
-  inputMeta:  {display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:6,paddingLeft:2},
-  metaHint:   {fontSize:10,color:"#333"},
-};
+// ── Sidebar style shortcuts ──────────────────────────────────────────
+const sLabel: React.CSSProperties = {fontSize:9,fontWeight:700,letterSpacing:2,color:"#3a4a6a",marginBottom:6,paddingLeft:8};
+const sBtn:   React.CSSProperties = {width:"100%",display:"flex",alignItems:"center",gap:8,background:"transparent",border:"none",color:"#7a92b8",padding:"7px 8px",borderRadius:7,cursor:"pointer",fontSize:12,textAlign:"left"};
+const sBtnA:  React.CSSProperties = {background:`${C.brightBlue}15`,color:C.white,borderLeft:`2px solid ${C.brightBlue}`};
+const sBtnIcon: React.CSSProperties = {fontSize:12,width:16,textAlign:"center",flexShrink:0};
+const tag:    React.CSSProperties = {borderRadius:20,padding:"2px 10px",fontSize:11};
