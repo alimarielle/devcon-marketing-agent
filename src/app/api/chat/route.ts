@@ -4,16 +4,16 @@ const DAILY_LIMIT    = 5;
 const MAX_WORDS      = 200;
 const MAX_BODY_BYTES = 32_768;
 
-const usage = new Map<string, { count: number; date: string }>();
+const VALID_ROLES = ["chapter_lead","volunteer","cohort_intern","operations_manager","hq_lead"];
+
+// Per role+IP daily usage: key = "role:ip:date"
+const usage = new Map<string, number>();
 
 function getToday() { return new Date().toISOString().slice(0, 10); }
 
 function getIP(req: NextRequest): string {
-  const forwarded = req.headers.get("x-forwarded-for");
-  if (forwarded) {
-    const ip = forwarded.split(",")[0].trim();
-    if (/^[\d.a-fA-F:]+$/.test(ip)) return ip;
-  }
+  const f = req.headers.get("x-forwarded-for");
+  if (f) { const ip = f.split(",")[0].trim(); if (/^[\d.a-fA-F:]+$/.test(ip)) return ip; }
   return req.headers.get("x-real-ip") || "unknown";
 }
 
@@ -36,7 +36,7 @@ function validateMessages(messages: unknown): boolean {
   for (const m of messages) {
     if (typeof m !== "object" || m === null) return false;
     const msg = m as Record<string, unknown>;
-    if (!["user", "assistant"].includes(msg.role as string)) return false;
+    if (!["user","assistant"].includes(msg.role as string)) return false;
     if (typeof msg.content !== "string") return false;
     if ((msg.content as string).length > 20_000) return false;
   }
@@ -57,52 +57,52 @@ export async function POST(req: NextRequest) {
   if (contentLength > MAX_BODY_BYTES)
     return NextResponse.json({ error: "Request too large." }, { status: 413 });
 
-  const ip    = getIP(req);
-  const today = getToday();
-  const record = usage.get(ip);
-  if (record && record.date === today) {
-    if (record.count >= DAILY_LIMIT)
-      return NextResponse.json(
-        { error: `Daily limit reached. You have ${DAILY_LIMIT} prompts per day. Come back tomorrow!` },
-        { status: 429 }
-      );
-    record.count += 1;
-  } else {
-    usage.set(ip, { count: 1, date: today });
-  }
+  let body: { messages?: unknown; system?: unknown; sessionId?: unknown; role?: unknown };
+  try { body = await req.json(); }
+  catch { return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 }); }
 
-  let body: { messages?: unknown; system?: unknown; sessionId?: unknown };
-  try {
-    body = await req.json();
-  } catch {
-    const r = usage.get(ip)!; r.count = Math.max(0, r.count - 1);
-    return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
-  }
+  const { messages, system, sessionId, role } = body;
 
-  const { messages, system, sessionId } = body;
+  // Validate role
+  if (typeof role !== "string" || !VALID_ROLES.includes(role))
+    return NextResponse.json({ error: "Invalid role." }, { status: 400 });
 
-  if (!validateMessages(messages)) {
-    const r = usage.get(ip)!; r.count = Math.max(0, r.count - 1);
+  if (!validateMessages(messages))
     return NextResponse.json({ error: "Invalid messages format." }, { status: 400 });
-  }
 
-  if (typeof system !== "string" || system.length > 10_000) {
-    const r = usage.get(ip)!; r.count = Math.max(0, r.count - 1);
+  if (typeof system !== "string" || system.length > 10_000)
     return NextResponse.json({ error: "Invalid system prompt." }, { status: 400 });
-  }
 
-  if (typeof sessionId !== "string" || !/^[a-z0-9]{6,32}$/.test(sessionId)) {
-    const r = usage.get(ip)!; r.count = Math.max(0, r.count - 1);
+  if (typeof sessionId !== "string" || !/^[a-z0-9]{6,32}$/.test(sessionId))
     return NextResponse.json({ error: "Invalid session." }, { status: 400 });
+
+  // Per-role per-IP daily rate limiting
+  const ip      = getIP(req);
+  const today   = getToday();
+  const usageKey = `${role}:${ip}:${today}`;
+  const count    = usage.get(usageKey) ?? 0;
+
+  if (count >= DAILY_LIMIT) {
+    const roleLabel: Record<string,string> = {
+      chapter_lead:"Chapter Lead", volunteer:"Volunteer",
+      cohort_intern:"Cohort Intern", operations_manager:"Operations Manager", hq_lead:"HQ Lead",
+    };
+    return NextResponse.json({
+      error: `Daily limit reached for ${roleLabel[role]}. You have ${DAILY_LIMIT} prompts per day. Your limit resets tomorrow — come back then!`,
+      limitReached: true,
+    }, { status: 429 });
   }
 
+  usage.set(usageKey, count + 1);
+
+  // Input validation
   const typedMessages = messages as Array<{ role: string; content: string }>;
   const lastMsg   = typedMessages[typedMessages.length - 1]?.content ?? "";
   const sanitized = sanitizeInput(lastMsg);
   const wc        = countWords(sanitized);
 
   if (wc > MAX_WORDS) {
-    const r = usage.get(ip)!; r.count = Math.max(0, r.count - 1);
+    usage.set(usageKey, count); // undo increment
     return NextResponse.json(
       { error: `Message too long (${wc} words). Keep prompts under ${MAX_WORDS} words.` },
       { status: 400 }
@@ -118,7 +118,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
   }
 
-  console.log(`[chat] ip_hash=${Buffer.from(ip).toString("base64").slice(0,8)} words=${wc} msgs=${safeMessages.length}`);
+  console.log(`[chat] role=${role} ip_hash=${Buffer.from(ip).toString("base64").slice(0,8)} words=${wc} count=${count+1}/${DAILY_LIMIT}`);
 
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
@@ -141,19 +141,17 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "AI service error. Please try again." }, { status: 502 });
   }
 
-  // ── Continuation handling ──────────────────────────────────────────
-  // If the model stopped due to token limit (not natural end), append a
-  // friendly prompt so the user knows there's more and can continue.
+  // Continuation prompt on token limit
   const stopReason = data.stop_reason;
   if (stopReason === "max_tokens") {
     const textBlock = data.content?.find((b: { type: string; text?: string }) => b.type === "text");
     if (textBlock) {
       textBlock.text = textBlock.text.trimEnd() +
-        "\n\n---\n✂️ **That's part one!** There's more to this — just reply **\"continue\"** and I'll pick up right where I left off.";
+        "\n\n---\n✂️ **That's part one!** Reply **\"continue\"** and I'll pick up right where I left off.";
     }
   }
 
-  const remaining = DAILY_LIMIT - (usage.get(ip)?.count ?? 1);
+  const remaining = DAILY_LIMIT - (usage.get(usageKey) ?? 1);
   const response  = NextResponse.json(data);
   response.headers.set("X-Prompts-Remaining", String(remaining));
   response.headers.set("X-Content-Type-Options", "nosniff");
