@@ -448,7 +448,7 @@ export default function App() {
   );
 
   return(
-    <div style={{display:"flex",height:"100dvh",background:C.navyDeep,color:C.white,overflow:"hidden"}}>
+    <div style={{display:"flex",height:"100%",background:C.navyDeep,color:C.white,overflow:"hidden"}}>
       {showTour&&<OnboardingTour onClose={()=>setShowTour(false)}/>}
 
       {/* Desktop sidebar */}
@@ -498,8 +498,8 @@ export default function App() {
           {remaining!==null&&<span style={{marginLeft:"auto",fontSize:10,fontWeight:600,color:remaining===0?C.coral:remaining<=2?C.gold:C.teal}}>{remaining}/5</span>}
         </div>
 
-        {/* Chat area — scrolls independently */}
-        <div ref={chatRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:"0 0 8px"}}>
+        {/* Chat area — scrolls independently, padded so input never covers content */}
+        <div ref={chatRef} style={{flex:1,overflowY:"auto",overflowX:"hidden",paddingBottom:200}}>
           {msgs.length===0?(
             <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100%",padding:"32px 20px",textAlign:"center"}}>
               <div style={{fontSize:10,letterSpacing:3,color:C.muted,border:`1px solid ${C.border}`,borderRadius:20,padding:"4px 14px",marginBottom:20}}>· AI POWERED STRATEGIC ENGINE ·</div>
@@ -564,8 +564,8 @@ export default function App() {
           )}
         </div>
 
-        {/* Input bar — sticky, always visible above keyboard */}
-        <div style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0,position:"sticky" as const,bottom:0,zIndex:10}}>
+        {/* Input bar — fixed to bottom on mobile, sticky on desktop */}
+        <div className="input-bar" style={{padding:"12px 14px 0",background:"#0d1628",borderTop:`1px solid ${C.brightBlue}44`,flexShrink:0,zIndex:20}}>
           {/* Visual type picker */}
           {mode==="visual"&&(
             <div style={{display:"flex",gap:6,marginBottom:10}}>
@@ -639,9 +639,15 @@ export default function App() {
           .desktop-sidebar{display:none!important}
           .mobile-topbar{display:flex!important}
           .history-panel{left:0!important;width:100vw!important;z-index:45!important}
-          /* Keep input visible when mobile keyboard opens */
-          main { min-height: 0; }
-          .input-box textarea { font-size:16px!important; } /* prevents iOS auto-zoom on focus */
+          /* Fix: pin input bar above keyboard on Android/iOS */
+          .input-bar{
+            position:fixed!important;
+            bottom:0!important;
+            left:0!important;
+            right:0!important;
+            padding-bottom:calc(12px + env(safe-area-inset-bottom))!important;
+          }
+          .input-box textarea{font-size:16px!important;}
         }
       `}</style>
     </div>
