@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/devcon_favicon.svg",
     shortcut: "/devcon_favicon.svg",
-    apple: "/devcon_favicon.svg",
+    apple: "/devcon_favicon.svg"
   },
   openGraph: {
     title: "DEVCON Studios Marketing Agent",
