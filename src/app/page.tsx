@@ -159,22 +159,77 @@ function MD({ text }:{ text:string }) {
 }
 
 // ── Visual renderers ──────────────────────────────────────────────────
-function CarouselPreview({data}:{data:CarouselData}){
+function CarouselPreview({data,sourceImage}:{data:CarouselData;sourceImage?:{base64:string;mediaType:string}|null}){
   const [cur,setCur]=useState(0); const s=data.slides[cur];
   const isFirst=cur===0,isLast=cur===data.slides.length-1;
-  const bg=isFirst?`linear-gradient(135deg,${C.navy} 0%,${C.navyDark} 60%,${C.purple}44 100%)`:isLast?`linear-gradient(135deg,${C.brightBlue}33 0%,${C.navy} 100%)`:`linear-gradient(160deg,${C.navyDark} 0%,${C.navy} 100%)`;
-  return(<div style={{userSelect:"none"}}><div id={`visual-carousel-${cur}`} style={{width:320,height:320,background:bg,borderRadius:16,padding:"28px 24px",display:"flex",flexDirection:"column",justifyContent:"space-between",border:`1px solid ${C.brightBlue}44`,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,right:0,width:80,height:80,background:`${C.coral}18`,borderRadius:"0 16px 0 80px"}}/><div style={{position:"absolute",bottom:0,left:0,width:60,height:60,background:`${C.brightBlue}15`,borderRadius:"0 60px 0 16px"}}/><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",zIndex:1}}><span style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.skyBlue,background:`${C.brightBlue}22`,border:`1px solid ${C.brightBlue}44`,borderRadius:20,padding:"3px 10px"}}>DEVCON PH</span>{s.tag&&<span style={{fontSize:9,fontWeight:700,color:C.gold,background:`${C.gold}18`,border:`1px solid ${C.gold}44`,borderRadius:20,padding:"3px 8px"}}>{s.tag}</span>}</div><div style={{zIndex:1,flex:1,display:"flex",flexDirection:"column",justifyContent:"center",gap:8,padding:"12px 0"}}>{s.subtitle&&<div style={{fontSize:10,fontWeight:600,color:C.teal,letterSpacing:1.5,textTransform:"uppercase"}}>{s.subtitle}</div>}<div style={{fontSize:isFirst?22:18,fontWeight:900,color:C.white,lineHeight:1.2}}>{s.title}</div>{s.body&&<div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.6}}>{s.body}</div>}{s.highlight&&<div style={{fontSize:13,fontWeight:700,color:C.skyBlue,background:`${C.brightBlue}18`,borderLeft:`3px solid ${C.brightBlue}`,padding:"6px 10px",borderRadius:"0 8px 8px 0"}}>{s.highlight}</div>}</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:1}}><div style={{display:"flex",gap:4}}>{data.slides.map((_,i)=><div key={i} onClick={()=>setCur(i)} style={{width:i===cur?16:5,height:5,borderRadius:3,background:i===cur?C.skyBlue:`${C.white}33`,cursor:"pointer",transition:"all .2s"}}/>)}</div><span style={{fontSize:10,color:`${C.white}55`}}>{cur+1} / {data.slides.length}</span></div></div><div style={{display:"flex",gap:8,marginTop:10,justifyContent:"center"}}><button onClick={()=>setCur(p=>Math.max(0,p-1))} disabled={isFirst} style={{background:isFirst?C.navyDark:C.navy,border:`1px solid ${C.border}`,color:isFirst?C.border:C.white,borderRadius:8,padding:"6px 14px",cursor:isFirst?"not-allowed":"pointer",fontSize:13}}>← Prev</button><button onClick={()=>setCur(p=>Math.min(data.slides.length-1,p+1))} disabled={isLast} style={{background:isLast?C.navyDark:C.navy,border:`1px solid ${C.border}`,color:isLast?C.border:C.white,borderRadius:8,padding:"6px 14px",cursor:isLast?"not-allowed":"pointer",fontSize:13}}>Next →</button></div></div>);
+  const imgUrl = sourceImage?`data:${sourceImage.mediaType};base64,${sourceImage.base64}`:null;
+  const bg = imgUrl && isFirst
+    ? `url(${imgUrl}) center/cover no-repeat`
+    : isFirst?`linear-gradient(135deg,${C.navy} 0%,${C.navyDark} 60%,${C.purple}44 100%)`
+    : isLast?`linear-gradient(135deg,${C.brightBlue}33 0%,${C.navy} 100%)`
+    : `linear-gradient(160deg,${C.navyDark} 0%,${C.navy} 100%)`;
+  return(<div style={{userSelect:"none"}}><div id={`visual-carousel-${cur}`} style={{width:320,height:320,background:bg,borderRadius:16,padding:"28px 24px",display:"flex",flexDirection:"column",justifyContent:"space-between",border:`1px solid ${C.brightBlue}44`,position:"relative",overflow:"hidden"}}>
+    {imgUrl&&isFirst&&<div style={{position:"absolute",inset:0,background:"rgba(10,18,32,.55)",borderRadius:16}}/>}
+    <div style={{position:"absolute",top:0,right:0,width:80,height:80,background:`${C.coral}18`,borderRadius:"0 16px 0 80px"}}/><div style={{position:"absolute",bottom:0,left:0,width:60,height:60,background:`${C.brightBlue}15`,borderRadius:"0 60px 0 16px"}}/><div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",zIndex:1}}><span style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.skyBlue,background:`${C.brightBlue}22`,border:`1px solid ${C.brightBlue}44`,borderRadius:20,padding:"3px 10px"}}>DEVCON PH</span>{s.tag&&<span style={{fontSize:9,fontWeight:700,color:C.gold,background:`${C.gold}18`,border:`1px solid ${C.gold}44`,borderRadius:20,padding:"3px 8px"}}>{s.tag}</span>}</div><div style={{zIndex:1,flex:1,display:"flex",flexDirection:"column",justifyContent:"center",gap:8,padding:"12px 0"}}>{s.subtitle&&<div style={{fontSize:10,fontWeight:600,color:C.teal,letterSpacing:1.5,textTransform:"uppercase"}}>{s.subtitle}</div>}<div style={{fontSize:isFirst?22:18,fontWeight:900,color:C.white,lineHeight:1.2}}>{s.title}</div>{s.body&&<div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.6}}>{s.body}</div>}{s.highlight&&<div style={{fontSize:13,fontWeight:700,color:C.skyBlue,background:`${C.brightBlue}18`,borderLeft:`3px solid ${C.brightBlue}`,padding:"6px 10px",borderRadius:"0 8px 8px 0"}}>{s.highlight}</div>}</div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",zIndex:1}}><div style={{display:"flex",gap:4}}>{data.slides.map((_,i)=><div key={i} onClick={()=>setCur(i)} style={{width:i===cur?16:5,height:5,borderRadius:3,background:i===cur?C.skyBlue:`${C.white}33`,cursor:"pointer",transition:"all .2s"}}/>)}</div><span style={{fontSize:10,color:`${C.white}55`}}>{cur+1} / {data.slides.length}</span></div></div><div style={{display:"flex",gap:8,marginTop:10,justifyContent:"center"}}><button onClick={()=>setCur(p=>Math.max(0,p-1))} disabled={isFirst} style={{background:isFirst?C.navyDark:C.navy,border:`1px solid ${C.border}`,color:isFirst?C.border:C.white,borderRadius:8,padding:"6px 14px",cursor:isFirst?"not-allowed":"pointer",fontSize:13}}>← Prev</button><button onClick={()=>setCur(p=>Math.min(data.slides.length-1,p+1))} disabled={isLast} style={{background:isLast?C.navyDark:C.navy,border:`1px solid ${C.border}`,color:isLast?C.border:C.white,borderRadius:8,padding:"6px 14px",cursor:isLast?"not-allowed":"pointer",fontSize:13}}>Next →</button></div></div>);
 }
-function FBPostPreview({data}:{data:FBPostData}){
-  return(<div id="visual-fb" style={{width:320,background:`linear-gradient(145deg,${C.navyDark},${C.navy})`,borderRadius:16,padding:"28px 24px",border:`1px solid ${C.brightBlue}44`,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:-20,right:-20,width:120,height:120,background:`${C.coral}15`,borderRadius:"50%"}}/><div style={{position:"absolute",bottom:-30,left:-20,width:100,height:100,background:`${C.purple}15`,borderRadius:"50%"}}/>{data.badge&&<div style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.skyBlue,background:`${C.brightBlue}22`,border:`1px solid ${C.brightBlue}44`,borderRadius:20,padding:"3px 10px",display:"inline-block",marginBottom:14}}>{data.badge}</div>}<div style={{position:"relative",zIndex:1}}><div style={{fontSize:11,fontWeight:700,color:C.coral,letterSpacing:1,marginBottom:6}}>DEVCON PH</div><div style={{fontSize:22,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{data.headline}</div>{data.subheadline&&<div style={{fontSize:13,fontWeight:600,color:C.skyBlue,marginBottom:10}}>{data.subheadline}</div>}<div style={{width:32,height:3,background:`linear-gradient(90deg,${C.brightBlue},${C.purple})`,borderRadius:2,marginBottom:14}}/><div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.7,marginBottom:16}}>{data.body}</div><div style={{background:`linear-gradient(135deg,${C.brightBlue},${C.purple})`,borderRadius:8,padding:"10px 16px",textAlign:"center",fontSize:12,fontWeight:700,color:C.white,marginBottom:12}}>{data.cta}</div><div style={{fontSize:10,color:`${C.skyBlue}99`}}>{data.hashtags}</div></div></div>);
+function FBPostPreview({data,sourceImage}:{data:FBPostData;sourceImage?:{base64:string;mediaType:string}|null}){
+  const imgUrl = sourceImage?`data:${sourceImage.mediaType};base64,${sourceImage.base64}`:null;
+  return(<div id="visual-fb" style={{width:320,background:imgUrl?`url(${imgUrl}) center/cover no-repeat`:`linear-gradient(145deg,${C.navyDark},${C.navy})`,borderRadius:16,padding:"28px 24px",border:`1px solid ${C.brightBlue}44`,position:"relative",overflow:"hidden"}}>
+    {imgUrl&&<div style={{position:"absolute",inset:0,background:"rgba(10,18,32,.6)"}}/>}
+    <div style={{position:"absolute",top:-20,right:-20,width:120,height:120,background:`${C.coral}15`,borderRadius:"50%"}}/><div style={{position:"absolute",bottom:-30,left:-20,width:100,height:100,background:`${C.purple}15`,borderRadius:"50%"}}/>{data.badge&&<div style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.skyBlue,background:`${C.brightBlue}22`,border:`1px solid ${C.brightBlue}44`,borderRadius:20,padding:"3px 10px",display:"inline-block",marginBottom:14,position:"relative",zIndex:1}}>{data.badge}</div>}<div style={{position:"relative",zIndex:1}}><div style={{fontSize:11,fontWeight:700,color:C.coral,letterSpacing:1,marginBottom:6}}>DEVCON PH</div><div style={{fontSize:22,fontWeight:900,color:C.white,lineHeight:1.2,marginBottom:8}}>{data.headline}</div>{data.subheadline&&<div style={{fontSize:13,fontWeight:600,color:C.skyBlue,marginBottom:10}}>{data.subheadline}</div>}<div style={{width:32,height:3,background:`linear-gradient(90deg,${C.brightBlue},${C.purple})`,borderRadius:2,marginBottom:14}}/><div style={{fontSize:12,color:"#b0c4e0",lineHeight:1.7,marginBottom:16}}>{data.body}</div><div style={{background:`linear-gradient(135deg,${C.brightBlue},${C.purple})`,borderRadius:8,padding:"10px 16px",textAlign:"center",fontSize:12,fontWeight:700,color:C.white,marginBottom:12}}>{data.cta}</div><div style={{fontSize:10,color:`${C.skyBlue}99`}}>{data.hashtags}</div></div></div>);
 }
-function PosterPreview({data}:{data:PosterData}){
-  return(<div id="visual-poster" style={{width:320,background:`linear-gradient(160deg,${C.navyDeep} 0%,${C.navy} 50%,${C.navyDark} 100%)`,borderRadius:16,padding:"28px 24px",border:`1px solid ${C.coral}44`,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:4,background:`linear-gradient(90deg,${C.coral},${C.purple},${C.brightBlue})`}}/><div style={{position:"absolute",top:20,right:-30,width:140,height:140,background:`${C.coral}10`,borderRadius:"50%"}}/><div style={{position:"relative",zIndex:1}}>{data.badge&&<div style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.coral,background:`${C.coral}18`,border:`1px solid ${C.coral}44`,borderRadius:20,padding:"3px 10px",display:"inline-block",marginBottom:16}}>{data.badge}</div>}<div style={{fontSize:9,fontWeight:800,letterSpacing:3,color:C.skyBlue,marginBottom:8}}>DEVCON PH PRESENTS</div><div style={{fontSize:24,fontWeight:900,color:C.white,lineHeight:1.15,marginBottom:6}}>{data.eventName}</div>{data.tagline&&<div style={{fontSize:12,color:C.gold,fontStyle:"italic",marginBottom:16}}>{data.tagline}</div>}<div style={{width:"100%",height:1,background:C.border,marginBottom:16}}/><div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>{data.date&&<div style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:"#b0c4e0"}}><span style={{color:C.skyBlue}}>📅</span>{data.date}{data.time?` · ${data.time}`:""}</div>}{data.location&&<div style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:"#b0c4e0"}}><span style={{color:C.coral}}>📍</span>{data.location}</div>}</div>{data.details&&data.details.length>0&&<div style={{marginBottom:16}}>{data.details.map((d,i)=><div key={i} style={{fontSize:11,color:"#8ab0d0",marginBottom:4,paddingLeft:10,borderLeft:`2px solid ${C.teal}`}}>{d}</div>)}</div>}{data.cta&&<div style={{background:`linear-gradient(135deg,${C.coral},${C.purple})`,borderRadius:8,padding:"10px 16px",textAlign:"center",fontSize:12,fontWeight:700,color:C.white}}>{data.cta}</div>}</div></div>);
+function PosterPreview({data,sourceImage}:{data:PosterData;sourceImage?:{base64:string;mediaType:string}|null}){
+  const imgUrl = sourceImage?`data:${sourceImage.mediaType};base64,${sourceImage.base64}`:null;
+  return(<div id="visual-poster" style={{width:320,background:imgUrl?`url(${imgUrl}) center/cover no-repeat`:`linear-gradient(160deg,${C.navyDeep} 0%,${C.navy} 50%,${C.navyDark} 100%)`,borderRadius:16,padding:"28px 24px",border:`1px solid ${C.coral}44`,position:"relative",overflow:"hidden"}}>
+    {imgUrl&&<div style={{position:"absolute",inset:0,background:"rgba(10,18,32,.65)"}}/>}
+    <div style={{position:"absolute",top:0,left:0,right:0,height:4,background:`linear-gradient(90deg,${C.coral},${C.purple},${C.brightBlue})`}}/><div style={{position:"absolute",top:20,right:-30,width:140,height:140,background:`${C.coral}10`,borderRadius:"50%"}}/><div style={{position:"relative",zIndex:1}}>{data.badge&&<div style={{fontSize:9,fontWeight:800,letterSpacing:2,color:C.coral,background:`${C.coral}18`,border:`1px solid ${C.coral}44`,borderRadius:20,padding:"3px 10px",display:"inline-block",marginBottom:16}}>{data.badge}</div>}<div style={{fontSize:9,fontWeight:800,letterSpacing:3,color:C.skyBlue,marginBottom:8}}>DEVCON PH PRESENTS</div><div style={{fontSize:24,fontWeight:900,color:C.white,lineHeight:1.15,marginBottom:6}}>{data.eventName}</div>{data.tagline&&<div style={{fontSize:12,color:C.gold,fontStyle:"italic",marginBottom:16}}>{data.tagline}</div>}<div style={{width:"100%",height:1,background:C.border,marginBottom:16}}/><div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:16}}>{data.date&&<div style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:"#b0c4e0"}}><span style={{color:C.skyBlue}}>📅</span>{data.date}{data.time?` · ${data.time}`:""}</div>}{data.location&&<div style={{display:"flex",gap:8,alignItems:"center",fontSize:12,color:"#b0c4e0"}}><span style={{color:C.coral}}>📍</span>{data.location}</div>}</div>{data.details&&data.details.length>0&&<div style={{marginBottom:16}}>{data.details.map((d,i)=><div key={i} style={{fontSize:11,color:"#8ab0d0",marginBottom:4,paddingLeft:10,borderLeft:`2px solid ${C.teal}`}}>{d}</div>)}</div>}{data.cta&&<div style={{background:`linear-gradient(135deg,${C.coral},${C.purple})`,borderRadius:8,padding:"10px 16px",textAlign:"center",fontSize:12,fontWeight:700,color:C.white}}>{data.cta}</div>}</div></div>);
 }
-function VisualMessage({data,label}:{data:VisualData;label:string}){
-  const dlId=data.type==="carousel"?"visual-carousel-0":data.type==="fb_post"?"visual-fb":"visual-poster";
-  const dl=(id:string)=>{const el=document.getElementById(id);if(!el)return;const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#0C1220;font-family:Inter,system-ui,sans-serif}</style></head><body>${el.outerHTML}</body></html>`;const blob=new Blob([html],{type:"text/html"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`devcon-${data.type}.html`;a.click();URL.revokeObjectURL(url);};
-  return(<div style={{display:"flex",flexDirection:"column",gap:10}}><div style={{fontSize:11,color:C.teal,fontWeight:600,letterSpacing:.5}}>✦ {label}</div>{data.type==="carousel"&&<CarouselPreview data={data}/>}{data.type==="fb_post"&&<FBPostPreview data={data}/>}{data.type==="poster"&&<PosterPreview data={data}/>}<button onClick={()=>dl(dlId)} style={{display:"flex",alignItems:"center",gap:6,background:`${C.teal}18`,border:`1px solid ${C.teal}44`,color:C.teal,borderRadius:8,padding:"7px 14px",cursor:"pointer",fontSize:12,fontWeight:600,width:"fit-content"}}>⬇ Download HTML</button><div style={{fontSize:10,color:"#3a4a6a"}}>Open in browser → screenshot to save as image</div></div>);
+function VisualMessage({data,label,sourceImage}:{data:VisualData;label:string;sourceImage?:{base64:string;mediaType:string}|null}){
+  const [downloading, setDownloading] = useState(false);
+  const dlId = data.type==="carousel"?"visual-carousel-0":data.type==="fb_post"?"visual-fb":"visual-poster";
+
+  const downloadAsPNG = async (id: string) => {
+    setDownloading(true);
+    try {
+      const el = document.getElementById(id);
+      if (!el) return;
+      // Dynamic import to avoid SSR window error
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const canvas = await html2canvas(el, {
+        backgroundColor: "#0C1220",
+        scale: 2, // 2x resolution for crisp PNG
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+      });
+      canvas.toBlob(blob => {
+        if (!blob) return;
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement("a");
+        a.href = url;
+        a.download = `devcon-${data.type}-${Date.now()}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }, "image/png");
+    } catch (e) {
+      console.error("PNG export failed:", e);
+    }
+    setDownloading(false);
+  };
+
+  return(
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      <div style={{fontSize:11,color:C.teal,fontWeight:600,letterSpacing:.5}}>✦ {label}</div>
+      {data.type==="carousel"&&<CarouselPreview data={data} sourceImage={sourceImage}/>}
+      {data.type==="fb_post"&&<FBPostPreview   data={data} sourceImage={sourceImage}/>}
+      {data.type==="poster"&&<PosterPreview    data={data} sourceImage={sourceImage}/>}
+      <button onClick={()=>downloadAsPNG(dlId)} disabled={downloading}
+        style={{display:"flex",alignItems:"center",gap:6,background:downloading?`${C.border}18`:`${C.teal}18`,border:`1px solid ${downloading?C.border:C.teal}44`,color:downloading?C.muted:C.teal,borderRadius:8,padding:"7px 14px",cursor:downloading?"wait":"pointer",fontSize:12,fontWeight:600,width:"fit-content",transition:"all .2s"}}>
+        {downloading?"⏳ Generating PNG...":"⬇ Download PNG"}
+      </button>
+      <div style={{fontSize:10,color:"#3a4a6a"}}>Downloads as a high-res PNG — ready to post directly</div>
+    </div>
+  );
 }
 
 // ── Config ────────────────────────────────────────────────────────────
@@ -231,6 +286,7 @@ type Msg = {
   text:string;
   visualData?:VisualData;
   visualLabel?:string;
+  visualSourceImage?:{base64:string;mediaType:string}|null;
   tags?:{mode?:string; channels?:string[]; chapter?:string};
   image?:{base64:string; mediaType:string; name:string};
 };
@@ -386,7 +442,7 @@ export default function App() {
         if(!res.ok){const err=data as unknown as{error?:string};setMsgs(p=>[...p,{role:"assistant",text:`⚠️ ${err.error||"Failed to generate visual."}`}]);}
         else{
           const label=visualType==="carousel"?"Instagram Carousel":visualType==="fb_post"?"Facebook Post Card":"Event Poster";
-          setMsgs(p=>[...p,{role:"assistant",text:"__visual__",visualData:data,visualLabel:label}]);
+          setMsgs(p=>[...p,{role:"assistant",text:"__visual__",visualData:data,visualLabel:label,visualSourceImage:imageSnapshot?{base64:imageSnapshot.base64,mediaType:imageSnapshot.mediaType}:null}]);
           const rem=res.headers.get("X-Prompts-Remaining");
           if(rem!==null) setRemaining(Number(rem));
         }
@@ -597,7 +653,7 @@ export default function App() {
                         <img src={`data:${m.image.mediaType};base64,${m.image.base64}`} alt={m.image.name}
                           style={{maxWidth:"100%",maxHeight:200,borderRadius:8,marginBottom:8,display:"block",border:`1px solid ${C.border}`}}/>
                       )}
-                      {m.role==="assistant"&&m.visualData?<VisualMessage data={m.visualData} label={m.visualLabel||"Visual Content"}/>
+                      {m.role==="assistant"&&m.visualData?<VisualMessage data={m.visualData} label={m.visualLabel||"Visual Content"} sourceImage={m.visualSourceImage}/>
                         :m.role==="assistant"?<MD text={m.text}/>:m.text}
                     </div>
                   </div>
