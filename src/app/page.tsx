@@ -226,7 +226,14 @@ const STARTERS = [
   {icon:"▣", text:"Draft a Facebook post for the AI Academy scholarship"},
 ];
 
-type Msg    = {role:"user"|"assistant"; text:string; visualData?:VisualData; visualLabel?:string; tags?:{mode?:string; channels?:string[]; chapter?:string}};
+type Msg = {
+  role:"user"|"assistant";
+  text:string;
+  visualData?:VisualData;
+  visualLabel?:string;
+  tags?:{mode?:string; channels?:string[]; chapter?:string};
+  image?:{base64:string; mediaType:string; name:string};
+};
 type HI     = {role:"user"|"assistant"; content:string};
 type HEntry = {id:string; user_message:string; assistant_message:string; created_at:string};
 
@@ -254,6 +261,9 @@ export default function App() {
   const [histLoading, setHistLoading] = useState(false);
   const [visualType,  setVisualType]  = useState<VisualType>("carousel");
   const [keyboardOffset, setKeyboardOffset] = useState(0);
+  const [attachedImage, setAttachedImage] = useState<{base64:string; mediaType:string; name:string}|null>(null);
+  const [imageError, setImageError] = useState<string|null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sessionId] = useState(()=>Math.random().toString(36).slice(2));
   const abortRef = useRef<AbortController|null>(null);
   const chatRef  = useRef<HTMLDivElement>(null);
@@ -301,6 +311,49 @@ export default function App() {
     setHistLoading(false);
   },[userRole]);
 
+  const MAX_IMAGE_BYTES = 4 * 1024 * 1024;
+  const ALLOWED_TYPES = ["image/jpeg","image/png","image/gif","image/webp"];
+
+  const processImageFile = (file: File): void => {
+    setImageError(null);
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setImageError("Only JPEG, PNG, GIF, or WebP images are supported.");
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError(`Image too large (${(file.size/1024/1024).toFixed(1)}MB). Max size is 4MB.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      setAttachedImage({ base64, mediaType: file.type, name: file.name });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleImageAttach = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) processImageFile(file);
+    e.target.value = "";
+  };
+
+  // Paste handler — intercepts image pastes from clipboard
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const items = Array.from(e.clipboardData.items);
+    const imageItem = items.find(item => item.type.startsWith("image/"));
+    if (!imageItem) return; // let normal text paste proceed
+    e.preventDefault();
+    if (attachedImage) {
+      setImageError("Only 1 image per prompt. Remove the current image first.");
+      return;
+    }
+    const file = imageItem.getAsFile();
+    if (file) processImageFile(file);
+  };
+
+  const removeImage = () => { setAttachedImage(null); setImageError(null); };
+
   const openHistory=()=>{setHistOpen(true);loadHistory();};
   const toggleCh=(id:string)=>setChannels(p=>p.includes(id)?p.filter(c=>c!==id):[...p,id]);
 
@@ -321,8 +374,9 @@ export default function App() {
       channels:channels.length?CHANNELS.filter(c=>channels.includes(c.id)).map(c=>c.label):undefined,
       chapter:chapter||undefined,
     };
-    setMsgs(p=>[...p,{role:"user",text:userText,tags:activeTags}]);
-    setInput(""); setLoading(true); setSideOpen(false);
+    const imageSnapshot = attachedImage;
+    setMsgs(p=>[...p,{role:"user",text:userText,tags:activeTags,image:imageSnapshot||undefined}]);
+    setInput(""); setAttachedImage(null); setImageError(null); setLoading(true); setSideOpen(false);
     const ctrl=new AbortController(); abortRef.current=ctrl;
 
     if(mode==="visual"){
@@ -340,7 +394,14 @@ export default function App() {
       abortRef.current=null; setLoading(false); return;
     }
 
-    const newHist:HI[]=[...hist,{role:"user",content:buildPrompt(userText)}];
+    // Build history entry — include image if attached
+    const userContent: unknown = imageSnapshot
+      ? [
+          { type:"image", source:{ type:"base64", media_type:imageSnapshot.mediaType, data:imageSnapshot.base64 } },
+          { type:"text", text:buildPrompt(userText) },
+        ]
+      : buildPrompt(userText);
+    const newHist:HI[]=[...hist,{role:"user",content:userContent as string}];
     try{
       const res=await fetch("/api/chat",{method:"POST",signal:ctrl.signal,headers:{"Content-Type":"application/json"},
         body:JSON.stringify({messages:newHist,system:SYSTEM_PROMPT,sessionId,role:userRole||"volunteer"})});
@@ -532,6 +593,10 @@ export default function App() {
                       ...(m.role==="user"
                         ?{background:C.navy,border:`1px solid ${C.brightBlue}33`,borderRadius:"12px 12px 4px 12px",color:"#d8e8ff"}
                         :{background:C.cardBg,border:`1px solid ${C.border}`,borderRadius:"4px 12px 12px 12px",color:"#c0d4ee"})}}>
+                      {m.role==="user"&&m.image&&(
+                        <img src={`data:${m.image.mediaType};base64,${m.image.base64}`} alt={m.image.name}
+                          style={{maxWidth:"100%",maxHeight:200,borderRadius:8,marginBottom:8,display:"block",border:`1px solid ${C.border}`}}/>
+                      )}
                       {m.role==="assistant"&&m.visualData?<VisualMessage data={m.visualData} label={m.visualLabel||"Visual Content"}/>
                         :m.role==="assistant"?<MD text={m.text}/>:m.text}
                     </div>
@@ -568,9 +633,36 @@ export default function App() {
               {chapter&&<button onClick={()=>setChapter("")} className="tag-btn" style={{display:"flex",alignItems:"center",gap:5,background:`${C.gold}25`,border:`1px solid ${C.gold}`,color:C.white,borderRadius:20,padding:"4px 10px 4px 12px",fontSize:12,fontWeight:600,cursor:"pointer"}}>◈ {chapter}<span style={{marginLeft:2,color:C.coral,fontWeight:700,fontSize:13,lineHeight:1}}>✕</span></button>}
             </div>
           )}
+          {/* Image attachment preview */}
+          {attachedImage && (
+            <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10,background:`${C.brightBlue}10`,border:`1px solid ${C.brightBlue}33`,borderRadius:10,padding:"8px 12px"}}>
+              <img src={`data:${attachedImage.mediaType};base64,${attachedImage.base64}`} alt="attached"
+                style={{width:44,height:44,borderRadius:6,objectFit:"cover",flexShrink:0,border:`1px solid ${C.border}`}}/>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:12,color:C.white,fontWeight:600,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{attachedImage.name}</div>
+                <div style={{fontSize:10,color:C.muted,marginTop:2}}>1 image attached · max 1 per prompt</div>
+              </div>
+              <button onClick={removeImage} style={{background:"none",border:"none",color:C.coral,cursor:"pointer",fontSize:16,flexShrink:0,padding:"0 4px"}}>✕</button>
+            </div>
+          )}
+          {imageError && (
+            <div style={{fontSize:11,color:C.coral,marginBottom:8,paddingLeft:4}}>⚠️ {imageError}</div>
+          )}
+
           <div className="input-box" style={{display:"flex",gap:8,background:"#141f35",border:`2px solid ${wc>MAX_WORDS?C.coral:C.brightBlue}55`,borderRadius:14,padding:"10px 10px 10px 16px",alignItems:"flex-end",transition:"border-color .2s, box-shadow .2s"}}>
+            {/* Hidden file input */}
+            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/gif,image/webp"
+              onChange={handleImageAttach} style={{display:"none"}}/>
+            {/* Attach button — disabled if image already attached */}
+            <button
+              onClick={()=>{ if(attachedImage){ setImageError("Only 1 image per prompt. Remove the current one first."); return; } fileInputRef.current?.click(); }}
+              title={attachedImage?"Remove current image first":"Attach image (max 4MB, 1 per prompt)"}
+              style={{background:"none",border:"none",color:attachedImage?C.border:C.muted,cursor:attachedImage?"not-allowed":"pointer",fontSize:18,flexShrink:0,padding:"0 2px",lineHeight:1,transition:"color .15s",alignSelf:"center"}}>
+              📎
+            </button>
             <textarea value={input} onChange={e=>setInput(e.target.value)}
               onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send();}}}
+              onPaste={handlePaste}
               placeholder={remaining===0?"Daily limit reached. Come back tomorrow! 🕐":"Engineer your next strategy..."}
               disabled={remaining===0}
               style={{flex:1,background:"transparent",border:"none",color:remaining===0?"#3a4a6a":"#e8f0ff",fontSize:14,resize:"none",height:54,lineHeight:1.6,paddingTop:4,fontFamily:"inherit",caretColor:C.skyBlue,cursor:remaining===0?"not-allowed":"text"}}/>
