@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const MAX_BODY_BYTES = 32_768;
-const DAILY_LIMIT   = 5; // shared with chat
+const DAILY_LIMIT   = 5;
 
-// shared rate limiter — import from a util in production; inline here for simplicity
+const VALID_ROLES = ["chapter_lead","volunteer","cohort_intern","operations_manager","hq_lead"];
+const VALID_TYPES = ["carousel","fb_post","poster","thumb_vertical","thumb_landscape"];
+
 const usage = new Map<string, { count: number; date: string }>();
 function getToday() { return new Date().toISOString().slice(0, 10); }
 function getIP(req: NextRequest): string {
@@ -15,18 +17,18 @@ function getIP(req: NextRequest): string {
 const VISUAL_SYSTEM = `You are a visual content designer for DEVCON Studios Philippines. Generate structured JSON for branded social media visuals.
 
 DEVCON brand: Mission "Tech-Empowered Philippines For All". Voice: Pioneering, Open, Collaborative, Impactful.
-Colors: navy #1A2A4A, dark navy #111B2E, deep navy #0C1220, sky blue #4DC8E8, bright blue #2B7DE9, coral #E8574A, purple #8B4FD8, gold #F5C842, teal #1BA8A0.
-Font: Inter. Always include: DEVCON branding, relevant hashtags (#DEVCON #DEVCONph #TechEmpoweredPhilippines).
+Colors: navy #1A2A4A, dark navy #111B2E, sky blue #4DC8E8, bright blue #2B7DE9, coral #E8574A, purple #8B4FD8, gold #F5C842, teal #1BA8A0.
+Always include DEVCON branding and hashtags (#DEVCON #DEVCONph #TechEmpoweredPhilippines #16YearsofDEVCON).
 
-You must respond with ONLY valid JSON, no markdown, no explanation. Follow the exact schema for the requested type.
+You must respond with ONLY valid JSON, no markdown, no explanation, no backticks.
 
-For CAROUSEL: {"type":"carousel","slides":[{"slideNumber":1,"title":"...","subtitle":"...","body":"...","highlight":"...","tag":"..."}]} — 4 to 6 slides max. First slide is cover, last slide is CTA.
+For CAROUSEL: {"type":"carousel","slides":[{"slideNumber":1,"title":"...","subtitle":"...","body":"...","highlight":"...","tag":"..."}]} — 4 to 6 slides. First slide is cover, last slide is CTA.
 
-For FB_POST: {"type":"fb_post","headline":"...","subheadline":"...","body":"...","cta":"...","hashtags":"...","badge":"..."}
+For FB_POST, THUMB_VERTICAL, THUMB_LANDSCAPE: {"type":"fb_post","headline":"...","subheadline":"...","body":"...","cta":"...","hashtags":"...","badge":"..."}
 
 For POSTER: {"type":"poster","eventName":"...","tagline":"...","date":"...","time":"...","location":"...","details":["...","..."],"cta":"...","badge":"..."}
 
-Keep copy punchy and on-brand. Max 12 words per title, 20 words per body line.`;
+Keep copy punchy. Max 10 words per title/headline, 20 words per body line. No superlatives.`;
 
 export async function POST(req: NextRequest) {
   if (!req.headers.get("content-type")?.includes("application/json"))
@@ -47,15 +49,24 @@ export async function POST(req: NextRequest) {
     usage.set(ip, { count: 1, date: today });
   }
 
-  let body: { prompt?: unknown; visualType?: unknown };
+  let body: { prompt?: unknown; visualType?: unknown; role?: unknown };
   try { body = await req.json(); }
   catch { return NextResponse.json({ error: "Invalid JSON." }, { status: 400 }); }
 
-  const { prompt, visualType } = body;
+  const { prompt, visualType, role } = body;
+
   if (typeof prompt !== "string" || prompt.length < 5 || prompt.length > 2000)
     return NextResponse.json({ error: "Invalid prompt." }, { status: 400 });
-  if (!["carousel", "fb_post", "poster"].includes(visualType as string))
+  if (!VALID_TYPES.includes(visualType as string))
     return NextResponse.json({ error: "Invalid visual type." }, { status: 400 });
+  if (typeof role !== "string" || !VALID_ROLES.includes(role))
+    return NextResponse.json({ error: "Invalid role." }, { status: 400 });
+
+  // Thumbnails reuse fb_post JSON schema — map to correct schema type for the prompt
+  const schemaType =
+    visualType === "thumb_vertical" || visualType === "thumb_landscape"
+      ? "FB_POST"
+      : (visualType as string).toUpperCase().replace("_", "_");
 
   if (!process.env.ANTHROPIC_API_KEY)
     return NextResponse.json({ error: "Server configuration error." }, { status: 500 });
@@ -71,7 +82,7 @@ export async function POST(req: NextRequest) {
       model: "claude-haiku-4-5-20251001",
       max_tokens: 1024,
       system: VISUAL_SYSTEM,
-      messages: [{ role: "user", content: `Create a ${visualType} for: ${prompt}` }],
+      messages: [{ role: "user", content: `Create a ${schemaType} for: ${prompt}` }],
     }),
   });
 
@@ -82,6 +93,8 @@ export async function POST(req: NextRequest) {
   try {
     const clean = text.replace(/```json|```/g, "").trim();
     const json  = JSON.parse(clean);
+    // Override type to preserve thumb_vertical / thumb_landscape
+    json.type = visualType;
     const remaining = DAILY_LIMIT - (usage.get(ip)?.count ?? 1);
     const response  = NextResponse.json(json);
     response.headers.set("X-Prompts-Remaining", String(remaining));
